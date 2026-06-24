@@ -189,7 +189,7 @@ Expected: author `hash_developer <sidotidavide@gmail.com>`, and the body contain
 **Files:**
 - Create: `RR Dupe Finder/Scripts/sku.lua`
 
-- [ ] **Step 1: Write sku.lua**
+- [x] **Step 1: Write sku.lua**
 
 The struct keys are copied verbatim from the working SKU QoL mod — do NOT alter them.
 
@@ -226,7 +226,7 @@ return M
 **Files:**
 - Create: `RR Dupe Finder/Scripts/scan.lua`
 
-- [ ] **Step 1: Write scan.lua**
+- [x] **Step 1: Write scan.lua**
 
 ```lua
 -- RR Dupe Finder — cassette enumeration
@@ -257,7 +257,7 @@ return M
 **Files:**
 - Modify: `RR Dupe Finder/Scripts/main.lua`
 
-- [ ] **Step 1: Replace main.lua with the scan-dump version**
+- [x] **Step 1: Replace main.lua with the scan-dump version**
 
 This is a temporary diagnostic so we can confirm `scan`/`sku` work before building `report`. The scan runs inside `ExecuteInGameThread` (UObject reads must be on the game thread).
 
@@ -291,18 +291,18 @@ log("RR Dupe Finder loaded (scan-dump). Press " .. Config.ScanKey .. " to dump c
 
 ### Task 2.4: In-game verification
 
-- [ ] **Step 1: Hot-reload and scan**
+- [x] **Step 1: Hot-reload and scan**
 
 Ask the user to load a save with cassettes on shelves, `Ctrl+R`, then press **F6**.
 
-- [ ] **Step 2: Verify the dump**
+- [x] **Step 2: Verify the dump**
 
 ```powershell
 Select-String -Path "D:\SteamLibrary\steamapps\common\RetroRewind\RetroRewind\Binaries\Win64\ue4ss\UE4SS.log" -Pattern "Scan found" | Select-Object -Last 1
 ```
 Expected: `[RR-Dupe] Scan found N readable cassettes.` with N > 0, followed by per-cassette `SKU x (a, b, c)` lines.
 
-- [ ] **Step 3: Cross-check one cassette**
+- [x] **Step 3: Cross-check one cassette**
 
 Ask the user to pick one cassette in-game whose SKU they can read via the in-game computer (or UE4SS Live View), and confirm that SKU appears in the dump. This validates `sku.read` against ground truth.
 
@@ -310,14 +310,14 @@ If the dump shows 0 cassettes: confirm a save is loaded with stock present and t
 
 ### Task 2.5: Commit
 
-- [ ] **Step 1: Stage and commit (no co-author trailer)**
+- [x] **Step 1: Stage and commit (no co-author trailer)**
 
 ```bash
 git add "RR Dupe Finder/Scripts/sku.lua" "RR Dupe Finder/Scripts/scan.lua" "RR Dupe Finder/Scripts/main.lua"
 git commit -m "Add SKU read and cassette scan modules"
 ```
 
-- [ ] **Step 2: Verify no co-author**
+- [x] **Step 2: Verify no co-author**
 
 ```bash
 git log -1 --format="%an <%ae>%n%n%B"
