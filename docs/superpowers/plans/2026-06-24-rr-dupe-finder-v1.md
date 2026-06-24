@@ -688,7 +688,7 @@ Expected: author `hash_developer <sidotidavide@gmail.com>`, no `Co-Authored-By` 
 - Modify: `RR Dupe Finder/Scripts/scan.lua`
 - Modify: `RR Dupe Finder/Scripts/main.lua`
 
-- [ ] **Step 1: Make scan.run also return a skipped count**
+- [x] **Step 1: Make scan.run also return a skipped count**
 
 Replace the body of `M.run` in `scan.lua` so it counts cassettes whose SKU couldn't be read:
 
@@ -710,7 +710,7 @@ function M.run()
 end
 ```
 
-- [ ] **Step 2: Log the tally in main.lua when Debug is on**
+- [x] **Step 2: Log the tally in main.lua when Debug is on**
 
 Update `runScan` in `main.lua`:
 
@@ -725,7 +725,7 @@ local function runScan()
 end
 ```
 
-- [ ] **Step 3: Confirm report tests still pass**
+- [x] **Step 3: Confirm report tests still pass**
 
 Run:
 ```powershell
@@ -738,7 +738,7 @@ Expected: `ALL PASS` (report.lua is unchanged; this just confirms nothing regres
 **Files:**
 - Modify: `RR Dupe Finder/Scripts/main.lua`
 
-- [ ] **Step 1: Register a console command alias for the scan**
+- [x] **Step 1: Register a console command alias for the scan**
 
 Add, immediately before the final `log("RR Dupe Finder loaded...")` line in `main.lua`:
 
@@ -750,7 +750,7 @@ RegisterConsoleCommandHandler("rrdupe", function(fullCommand, parameters, output
 end)
 ```
 
-- [ ] **Step 2: In-game verify the console command**
+- [x] **Step 2: In-game verify the console command**
 
 Ask the user to `Ctrl+R`, open the UE4SS console, type `rrdupe`, and confirm the same report prints as F6 produces.
 
@@ -760,7 +760,7 @@ Ask the user to `Ctrl+R`, open the UE4SS console, type `rrdupe`, and confirm the
 - Modify: `CLAUDE.md`
 - Modify: `README.md` (only if a claim is now inaccurate)
 
-- [ ] **Step 1: Update CLAUDE.md §10 (Current status)**
+- [x] **Step 1: Update CLAUDE.md §10 (Current status)**
 
 The current §10 says the MVP is "implemented as a single `main.lua`." It is now five modules. Replace the §10 body so it reads accurately, e.g.:
 
@@ -780,11 +780,11 @@ The current §10 says the MVP is "implemented as a single `main.lua`." It is now
 Design spec: `docs/superpowers/specs/2026-06-24-rr-dupe-finder-v1-design.md`.
 ```
 
-- [ ] **Step 2: Update CLAUDE.md §11 roadmap note**
+- [x] **Step 2: Update CLAUDE.md §11 roadmap note**
 
 Under §11, mark v1 done and leave the v2/v3 items; ensure the "Exploration TODO" (title field, mesh, inventory, rented flag) stays listed as the v2 gate.
 
-- [ ] **Step 3: Verify README accuracy**
+- [x] **Step 3: Verify README accuracy**
 
 Read `README.md`. Its Features/Usage already describe F6 + log output, which now matches.
 If anything reads as inaccurate (e.g. "single main.lua" wording anywhere), fix only that.
@@ -792,17 +792,17 @@ No broad rewrite.
 
 ### Task 4.4: Final verification pass
 
-- [ ] **Step 1: Edge case — no duplicates**
+- [x] **Step 1: Edge case — no duplicates**
 
 Ask the user to test on a save with no dupes (or temporarily set `Config.MinCopies = 99`),
 `Ctrl+R`, press F6. Expected in the log: `No duplicates — collection is clean.`
 
-- [ ] **Step 2: Edge case — MinCopies respected**
+- [x] **Step 2: Edge case — MinCopies respected**
 
 Set `Config.MinCopies = 3`, `Ctrl+R`, F6. Expected: only SKUs with 3+ copies appear.
 Reset to `2` afterward.
 
-- [ ] **Step 3: Confirm tests green**
+- [x] **Step 3: Confirm tests green**
 
 ```powershell
 lua tests/report_test.lua
@@ -811,14 +811,14 @@ Expected: `ALL PASS`.
 
 ### Task 4.5: Commit and push
 
-- [ ] **Step 1: Stage and commit (no co-author trailer)**
+- [x] **Step 1: Stage and commit (no co-author trailer)**
 
 ```bash
 git add "RR Dupe Finder/Scripts/scan.lua" "RR Dupe Finder/Scripts/main.lua" CLAUDE.md README.md
 git commit -m "Polish report, add console command, reconcile docs"
 ```
 
-- [ ] **Step 2: Verify no co-author, then push**
+- [x] **Step 2: Verify no co-author, then push**
 
 ```bash
 git log -1 --format="%an <%ae>%n%n%B"
