@@ -1,0 +1,114 @@
+-- tests/report_test.lua — run from repo root: lua tests/report_test.lua
+local report = dofile("RR Dupe Finder/Scripts/report.lua")
+
+local failures = 0
+local function check(name, cond)
+    if cond then
+        print("PASS: " .. name)
+    else
+        print("FAIL: " .. name)
+        failures = failures + 1
+    end
+end
+
+-- analyze: empty input
+do
+    local a = report.analyze({}, 2)
+    check("empty totalCarts",     a.totalCarts == 0)
+    check("empty uniqueSkus",     a.uniqueSkus == 0)
+    check("empty no dupes",       #a.dupes == 0)
+    check("empty sellable 0",     a.sellableExtras == 0)
+end
+
+-- analyze: all unique → no dupes
+do
+    local recs = {
+        { sku = 1, x = 0, y = 0, z = 0 },
+        { sku = 2, x = 0, y = 0, z = 0 },
+        { sku = 3, x = 0, y = 0, z = 0 },
+    }
+    local a = report.analyze(recs, 2)
+    check("unique totalCarts",    a.totalCarts == 3)
+    check("unique uniqueSkus",    a.uniqueSkus == 3)
+    check("unique no dupes",      #a.dupes == 0)
+    check("unique sellable 0",    a.sellableExtras == 0)
+end
+
+-- analyze: 10 x3, 20 x2, 30 x1 → dupes [10(3), 20(2)], sellable 3
+do
+    local recs = {
+        { sku = 30, x = 0, y = 0, z = 0 },
+        { sku = 10, x = 1, y = 2, z = 3 },
+        { sku = 20, x = 0, y = 0, z = 0 },
+        { sku = 10, x = 4, y = 5, z = 6 },
+        { sku = 20, x = 0, y = 0, z = 0 },
+        { sku = 10, x = 7, y = 8, z = 9 },
+    }
+    local a = report.analyze(recs, 2)
+    check("mix totalCarts",       a.totalCarts == 6)
+    check("mix uniqueSkus",       a.uniqueSkus == 3)
+    check("mix dupe count",       #a.dupes == 2)
+    check("mix sorted first 10",  a.dupes[1].sku == 10 and a.dupes[1].copies == 3)
+    check("mix sorted second 20", a.dupes[2].sku == 20 and a.dupes[2].copies == 2)
+    check("mix sellable 3",       a.sellableExtras == 3)
+    check("mix locs captured",    #a.dupes[1].locs == 3 and a.dupes[1].locs[1].x == 1)
+end
+
+-- analyze: MinCopies = 3 → only 10 flagged
+do
+    local recs = {
+        { sku = 10, x = 0, y = 0, z = 0 }, { sku = 10, x = 0, y = 0, z = 0 }, { sku = 10, x = 0, y = 0, z = 0 },
+        { sku = 20, x = 0, y = 0, z = 0 }, { sku = 20, x = 0, y = 0, z = 0 },
+    }
+    local a = report.analyze(recs, 3)
+    check("min3 dupe count",      #a.dupes == 1)
+    check("min3 only 10",         a.dupes[1].sku == 10)
+    check("min3 sellable 2",      a.sellableExtras == 2)
+end
+
+-- analyze: tie-break by sku ascending when copies equal
+do
+    local recs = {
+        { sku = 20, x = 0, y = 0, z = 0 }, { sku = 20, x = 0, y = 0, z = 0 },
+        { sku = 10, x = 0, y = 0, z = 0 }, { sku = 10, x = 0, y = 0, z = 0 },
+    }
+    local a = report.analyze(recs, 2)
+    check("tie first 10",         a.dupes[1].sku == 10)
+    check("tie second 20",        a.dupes[2].sku == 20)
+end
+
+-- format: empty → single "No cassettes found." line
+do
+    local lines = report.format(report.analyze({}, 2))
+    check("fmt empty single line", #lines == 1)
+    check("fmt empty text",        lines[1] == "No cassettes found.")
+end
+
+-- format: all unique → header + clean line
+do
+    local recs = { { sku = 1, x = 0, y = 0, z = 0 }, { sku = 2, x = 0, y = 0, z = 0 } }
+    local lines = report.format(report.analyze(recs, 2))
+    check("fmt clean header",  lines[1] == "Scan complete: 2 cassettes, 2 unique SKUs, 0 duplicated.")
+    check("fmt clean line",    lines[2] == "No duplicates — collection is clean.")
+end
+
+-- format: dupes → header, per-SKU blocks, footer
+do
+    local recs = {
+        { sku = 10, x = 1, y = 2, z = 3 },
+        { sku = 10, x = 4, y = 5, z = 6 },
+        { sku = 20, x = 7, y = 8, z = 9 },
+        { sku = 20, x = 1, y = 1, z = 1 },
+        { sku = 30, x = 0, y = 0, z = 0 },
+    }
+    local lines = report.format(report.analyze(recs, 2))
+    check("fmt dupe header",  lines[1] == "Scan complete: 5 cassettes, 3 unique SKUs, 2 duplicated.")
+    check("fmt dupe sku10",   lines[2] == "SKU 10 — 2 copies:")
+    check("fmt dupe sku10 c1",lines[3] == "    #1  (1.0, 2.0, 3.0)")
+    check("fmt dupe sku10 c2",lines[4] == "    #2  (4.0, 5.0, 6.0)")
+    check("fmt dupe sku20",   lines[5] == "SKU 20 — 2 copies:")
+    check("fmt dupe footer",  lines[#lines] == "Total sellable extras: 2   (sum of copies-1 across duplicated SKUs)")
+end
+
+print(string.format("\n%s", failures == 0 and "ALL PASS" or (failures .. " FAILURE(S)")))
+os.exit(failures == 0 and 0 or 1)
