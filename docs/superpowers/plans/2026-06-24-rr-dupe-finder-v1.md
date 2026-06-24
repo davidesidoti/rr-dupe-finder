@@ -334,7 +334,7 @@ Expected: author `hash_developer <sidotidavide@gmail.com>`, no `Co-Authored-By` 
 
 **Files:** none
 
-- [ ] **Step 1: Install Lua 5.4 via scoop**
+- [x] **Step 1: Install Lua 5.4 via scoop**
 
 Run (PowerShell):
 ```powershell
@@ -355,7 +355,7 @@ written and committed for future use.
 **Files:**
 - Create: `tests/report_test.lua`
 
-- [ ] **Step 1: Write the test harness + analyze cases**
+- [x] **Step 1: Write the test harness + analyze cases**
 
 `report.lua` has no `require` dependencies, so the test loads it with `dofile`. Run from the repo root.
 
@@ -443,7 +443,7 @@ print(string.format("\n%s", failures == 0 and "ALL PASS" or (failures .. " FAILU
 os.exit(failures == 0 and 0 or 1)
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run (from repo root):
 ```powershell
@@ -456,7 +456,7 @@ Expected: an error like `cannot open RR Dupe Finder/Scripts/report.lua` (the mod
 **Files:**
 - Create: `RR Dupe Finder/Scripts/report.lua`
 
-- [ ] **Step 1: Write report.lua with `analyze` (and a `format` stub)**
+- [x] **Step 1: Write report.lua with `analyze` (and a `format` stub)**
 
 ```lua
 -- RR Dupe Finder — duplicate grouping + report formatting (pure; no UE calls)
@@ -500,7 +500,7 @@ end
 return M
 ```
 
-- [ ] **Step 2: Run the test to verify analyze passes**
+- [x] **Step 2: Run the test to verify analyze passes**
 
 Run:
 ```powershell
@@ -513,7 +513,7 @@ Expected: every `analyze` check prints `PASS`, ending with `ALL PASS` and exit c
 **Files:**
 - Modify: `tests/report_test.lua`
 
-- [ ] **Step 1: Append format cases before the final summary lines**
+- [x] **Step 1: Append format cases before the final summary lines**
 
 Insert these blocks immediately **before** the `print(string.format("\n%s", ...))` line:
 
@@ -552,7 +552,7 @@ do
 end
 ```
 
-- [ ] **Step 2: Run the test to verify the format cases fail**
+- [x] **Step 2: Run the test to verify the format cases fail**
 
 Run:
 ```powershell
@@ -565,7 +565,7 @@ Expected: the `fmt ...` checks print `FAIL` (format returns `{}`), ending with a
 **Files:**
 - Modify: `RR Dupe Finder/Scripts/report.lua`
 
-- [ ] **Step 1: Replace the `format` placeholder with the real implementation**
+- [x] **Step 1: Replace the `format` placeholder with the real implementation**
 
 ```lua
 -- Returns: array of strings (no prefix; main.lua adds the "[RR-Dupe] " tag)
@@ -594,7 +594,7 @@ function M.format(a)
 end
 ```
 
-- [ ] **Step 2: Run the full test suite**
+- [x] **Step 2: Run the full test suite**
 
 Run:
 ```powershell
@@ -607,7 +607,7 @@ Expected: every check `PASS`, ending with `ALL PASS` and exit code 0.
 **Files:**
 - Modify: `RR Dupe Finder/Scripts/main.lua`
 
-- [ ] **Step 1: Replace main.lua with the final version**
+- [x] **Step 1: Replace main.lua with the final version**
 
 ```lua
 -- RR Dupe Finder — entry point
@@ -645,31 +645,31 @@ log("RR Dupe Finder loaded. Press " .. Config.ScanKey .. " to scan.")
 
 ### Task 3.6: In-game verification of the full report
 
-- [ ] **Step 1: Hot-reload and scan**
+- [x] **Step 1: Hot-reload and scan**
 
 Ask the user to load a save with at least one duplicated SKU, `Ctrl+R`, then press **F6**.
 
-- [ ] **Step 2: Verify the report format**
+- [x] **Step 2: Verify the report format**
 
 ```powershell
 Select-String -Path "D:\SteamLibrary\steamapps\common\RetroRewind\RetroRewind\Binaries\Win64\ue4ss\UE4SS.log" -Pattern "Scan complete" | Select-Object -Last 1
 ```
 Expected: `[RR-Dupe] Scan complete: N cassettes, U unique SKUs, D duplicated.` followed by per-SKU blocks and a `Total sellable extras: X` footer.
 
-- [ ] **Step 3: Sanity-check the math**
+- [x] **Step 3: Sanity-check the math**
 
 Confirm `sellable extras == total cassettes − unique SKUs` for the live data (both numbers are in the report). They must match.
 
 ### Task 3.7: Commit
 
-- [ ] **Step 1: Stage and commit (no co-author trailer)**
+- [x] **Step 1: Stage and commit (no co-author trailer)**
 
 ```bash
 git add "RR Dupe Finder/Scripts/report.lua" "RR Dupe Finder/Scripts/main.lua" "tests/report_test.lua"
 git commit -m "Add dupe grouping/report module with tests"
 ```
 
-- [ ] **Step 2: Verify no co-author**
+- [x] **Step 2: Verify no co-author**
 
 ```bash
 git log -1 --format="%an <%ae>%n%n%B"
