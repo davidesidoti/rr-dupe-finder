@@ -39,3 +39,6 @@ luac.out
 *.x86_64
 *.hex
 
+# Local Claude Code working context (kept out of git by request)
+CLAUDE.md
+

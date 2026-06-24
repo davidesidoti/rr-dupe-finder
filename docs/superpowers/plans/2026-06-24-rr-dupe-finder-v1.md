@@ -1,6 +1,6 @@
 # RR Dupe Finder — v1 MVP Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build a UE4SS Lua mod that, on F6, scans every loaded cassette, groups by SKU, flags 2+ copies, and reports each copy's world coordinates plus a sellable-extras total.
 
@@ -65,11 +65,11 @@ The in-game log lives at:
 - Create: `RR Dupe Finder/enabled.txt` (empty)
 - Create: `RR Dupe Finder/Scripts/config.lua`
 
-- [ ] **Step 1: Create the empty `enabled.txt`**
+- [x] **Step 1: Create the empty `enabled.txt`**
 
 Create `RR Dupe Finder/enabled.txt` with **no content** (zero bytes). Its mere presence enables the mod.
 
-- [ ] **Step 2: Create `config.lua`**
+- [x] **Step 2: Create `config.lua`**
 
 Create `RR Dupe Finder/Scripts/config.lua`:
 
@@ -88,7 +88,7 @@ return {
 **Files:**
 - Create: `RR Dupe Finder/Scripts/main.lua`
 
-- [ ] **Step 1: Write the scaffold main.lua**
+- [x] **Step 1: Write the scaffold main.lua**
 
 This stub requires ONLY `config` (the other modules don't exist yet, so requiring them would error on load):
 
@@ -111,7 +111,7 @@ log("RR Dupe Finder loaded (scaffold). Press " .. Config.ScanKey .. " to test th
 
 **Files:** none (filesystem link outside the repo)
 
-- [ ] **Step 1: Verify the link target doesn't already exist in Mods**
+- [x] **Step 1: Verify the link target doesn't already exist in Mods**
 
 Run (PowerShell):
 ```powershell
@@ -119,7 +119,7 @@ Test-Path "D:\SteamLibrary\steamapps\common\RetroRewind\RetroRewind\Binaries\Win
 ```
 Expected: `False`. If `True`, inspect it — if it's an old copy, the user should remove/rename it before linking.
 
-- [ ] **Step 2: Create the junction (no admin needed)**
+- [x] **Step 2: Create the junction (no admin needed)**
 
 Run (PowerShell):
 ```powershell
@@ -129,7 +129,7 @@ New-Item -ItemType Junction `
 ```
 Expected: prints a directory entry for the new junction. Now edits in the repo are live in-game.
 
-- [ ] **Step 3: Confirm hot-reload + console settings**
+- [x] **Step 3: Confirm hot-reload + console settings**
 
 Check `D:\SteamLibrary\steamapps\common\RetroRewind\RetroRewind\Binaries\Win64\ue4ss\UE4SS-settings.ini` has:
 ```ini
@@ -140,11 +140,11 @@ If not, set them (one-time). Note for the user: these require a game restart to 
 
 ### Task 1.4: In-game verification
 
-- [ ] **Step 1: Load the mod**
+- [x] **Step 1: Load the mod**
 
 Ask the user to launch the game (or `Ctrl+R` to hot-reload if already running) and load any save.
 
-- [ ] **Step 2: Verify the load banner**
+- [x] **Step 2: Verify the load banner**
 
 Grep the log:
 ```powershell
@@ -152,7 +152,7 @@ Select-String -Path "D:\SteamLibrary\steamapps\common\RetroRewind\RetroRewind\Bi
 ```
 Expected: a line `[RR-Dupe] RR Dupe Finder loaded (scaffold). Press F6 to test the keybind.`
 
-- [ ] **Step 3: Verify the keybind**
+- [x] **Step 3: Verify the keybind**
 
 Ask the user to press **F6** in-game, then grep:
 ```powershell
@@ -164,14 +164,14 @@ If either fails: confirm `enabled.txt` exists, the junction resolves, and `Key.F
 
 ### Task 1.5: Commit
 
-- [ ] **Step 1: Stage and commit (no co-author trailer)**
+- [x] **Step 1: Stage and commit (no co-author trailer)**
 
 ```bash
 git add "RR Dupe Finder/enabled.txt" "RR Dupe Finder/Scripts/config.lua" "RR Dupe Finder/Scripts/main.lua"
 git commit -m "Scaffold RR Dupe Finder mod (config + keybind stub)"
 ```
 
-- [ ] **Step 2: Verify the commit has no co-author**
+- [x] **Step 2: Verify the commit has no co-author**
 
 ```bash
 git log -1 --format="%an <%ae>%n%n%B"
