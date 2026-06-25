@@ -1,5 +1,13 @@
 # RR Dupe Finder — v3 Implementation Plan ("DUPLICATE" sticker + rented filter)
 
+> **OUTCOME (2026-06-25): Track A shipped; Track B abandoned.** Session 1 (rented filter + report
+> buckets) shipped. Session 3's load gate **FAILED** (`LoadAsset` can't resolve additive new-path
+> assets on this title — UE4SS #1101; verdict in `…-v3-tooling.md`, CLAUDE.md gotcha 16), so the
+> custom-pak sticker (S4–5) was dropped. The **Fallback** 3D-text label was then attempted and **also
+> failed** — `TextRenderComponent:SetText()` native-crashes on its FText arg (CLAUDE.md gotcha 17).
+> Both label paths dead ⇒ v3 ships the **rented filter + the v2 outline shell** (now rented-aware) as
+> the marker. Sessions 4–5 and the Fallback appendix below are **not executed** (kept for the record).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Stick a real in-world **"DUPLICATE"** label (a custom cooked texture on a flat quad, shipped in a `_P.pak`) onto every *sellable* duplicate cassette, and **exclude rented copies** (detected via the game's Reserved sticker) from the dupe flagging.
