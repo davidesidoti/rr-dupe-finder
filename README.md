@@ -14,7 +14,7 @@ The in-game computer only tells you how many copies of one SKU you own at a time
 - Scans every cassette in the store with a single keypress.
 - Groups them by SKU and flags anything you own 2 or more of.
 - Shows the **movie title** of each duplicated cassette (falls back to the raw SKU if a title can't be read).
-- **Highlights every sellable placed duplicate in-world** with a bright outline so you can spot it on the shelf; backstock copies (not physically placed) and copies currently rented out are listed but not highlighted.
+- **Highlights only the *extra* copies to sell**, leaving one copy of each movie unmarked as your keeper — sell everything outlined and you still keep a complete, unique collection. Backstock and rented copies are listed but not highlighted.
 - Breaks every duplicated movie into **sellable / backstock / rented** so you know exactly what you can move.
 - Reports the world coordinates of every sellable copy so you can track them down.
 - Tells you how many extra copies you could sell in total (rented copies excluded — you can't sell those).
@@ -47,10 +47,10 @@ The in-game computer only tells you how many copies of one SKU you own at a time
 ## Usage
 
 1. Load a save with your store stocked.
-2. Press **F6** to scan. Every placed duplicate is highlighted in-world with a bright outline; press **F6** again to refresh, or type `rrdupe clear` in the UE4SS console to remove the highlights.
+2. Press **F6** to scan. Every *extra* duplicate copy is highlighted in-world with a bright outline, leaving one copy of each movie unmarked as your keeper — so you can sell everything outlined and keep a complete, unique collection. Press **F6** again to refresh, or type `rrdupe clear` in the UE4SS console to remove the highlights.
 3. Read the report.
 
-The report lists each duplicated movie by title (or its SKU if the title can't be read), its copy count, a breakdown of how many copies are sellable / in backstock / currently rented out, and the world coordinates of every sellable copy — followed by a total of how many extra copies you can sell (rented copies excluded). You can also trigger a scan by typing `rrdupe` in the UE4SS console.
+The report lists each duplicated movie by title (or its SKU if the title can't be read), its copy count, a breakdown of how many copies are sellable / in backstock / currently rented out, and the world coordinates of every sellable copy — with one copy of each marked `<- KEEP this one` (your keeper) and the rest being the extras to sell. It finishes with a total of how many extra copies you can sell (rented copies excluded). You can also trigger a scan by typing `rrdupe` in the UE4SS console.
 
 ### Seeing the output
 
