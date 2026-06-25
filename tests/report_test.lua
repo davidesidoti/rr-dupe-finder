@@ -104,7 +104,7 @@ do
     local lines = report.format(report.analyze(recs, 2))
     check("fmt dupe header",  lines[1] == "Scan complete: 5 cassettes, 3 unique SKUs, 2 duplicated.")
     check("fmt dupe sku10",   lines[2] == "SKU 10 — 2 copies:")
-    check("fmt dupe sku10 c1",lines[3] == "    #1  (1.0, 2.0, 3.0)")
+    check("fmt dupe sku10 c1",lines[3] == "    #1  (1.0, 2.0, 3.0)  <- KEEP this one")
     check("fmt dupe sku10 c2",lines[4] == "    #2  (4.0, 5.0, 6.0)")
     check("fmt dupe sku20",   lines[5] == "SKU 20 — 2 copies:")
     check("fmt dupe footer",  lines[#lines] == "Total sellable extras: 2   (copies minus rented, minus one to keep, per duplicated SKU)")
@@ -165,7 +165,7 @@ do
     }
     local lines = report.format(report.analyze(recs, 2))
     check("v2 suffix header",    lines[2] == '"Alien" (SKU 50) — 2 copies (1 sellable, 1 backstock):')
-    check("v2 placed line",      lines[3] == "    #1  (10.0, 20.0, 30.0)")
+    check("v2 placed line",      lines[3] == "    #1  (10.0, 20.0, 30.0)  <- KEEP this one")
     check("v2 backstock line",   lines[4] == "    #2  backstock (unplaced)")
 end
 
@@ -214,7 +214,7 @@ do
     }
     local lines = report.format(report.analyze(recs, 2))
     check("v3 3-bucket suffix", lines[2] == '"Saw" (SKU 81) — 3 copies (1 sellable, 1 backstock, 1 rented):')
-    check("v3 sellable line",   lines[3] == "    #1  (1.0, 1.0, 1.0)")
+    check("v3 sellable line",   lines[3] == "    #1  (1.0, 1.0, 1.0)  <- KEEP this one")
     check("v3 backstock line",  lines[4] == "    #2  backstock (unplaced)")
     check("v3 rented line",     lines[5] == "    #3  rented (can't sell)")
 end
@@ -238,6 +238,65 @@ do
     local g = report.analyze(recs, 2).dupes[1]
     check("v3 nil rented == sellable", g.sellableCopies == 2 and g.rentedCopies == 0)
     check("v3 extras back-compat",     report.analyze(recs, 2).sellableExtras == 1)
+end
+
+-- v3 keep-one: analyze flags exactly one keeper (first PLACED, non-rented copy) per dupe group
+do
+    local recs = {
+        { sku = 90, title = "E.T.", x = 0,  y = 0,  z = 0,  rented = false }, -- backstock (not keeper)
+        { sku = 90, title = "E.T.", x = 11, y = 12, z = 13, rented = false }, -- first placed → KEEPER
+        { sku = 90, title = "E.T.", x = 21, y = 22, z = 23, rented = false }, -- placed → sell
+    }
+    local g = report.analyze(recs, 2).dupes[1]   -- keepOne defaults true
+    check("keep loc2 is keeper",  g.locs[2].keep == true)
+    check("keep loc1 not keeper", not g.locs[1].keep)
+    check("keep loc3 not keeper", not g.locs[3].keep)
+    local kept = (g.locs[1].keep and 1 or 0) + (g.locs[2].keep and 1 or 0) + (g.locs[3].keep and 1 or 0)
+    check("keep exactly one",     kept == 1)
+end
+
+-- v3 keep-one: keeper skips rented + backstock → first PLACED non-rented wins
+do
+    local recs = {
+        { sku = 91, title = "Up", x = 5, y = 5, z = 5, rented = true  }, -- placed but rented (skip)
+        { sku = 91, title = "Up", x = 0, y = 0, z = 0, rented = false }, -- backstock (skip)
+        { sku = 91, title = "Up", x = 9, y = 9, z = 9, rented = false }, -- first placed non-rented → KEEPER
+    }
+    local g = report.analyze(recs, 2).dupes[1]
+    check("keep skips rented+backstock", g.locs[3].keep == true and not g.locs[1].keep and not g.locs[2].keep)
+end
+
+-- v3 keep-one: a SKU with no placed-sellable copy has no keeper (nothing reachable to keep)
+do
+    local recs = {
+        { sku = 92, title = "Wall-E", x = 0, y = 0, z = 0, rented = false }, -- backstock
+        { sku = 92, title = "Wall-E", x = 7, y = 7, z = 7, rented = true  }, -- rented
+    }
+    local g = report.analyze(recs, 2).dupes[1]
+    check("keep none when no placed-sellable", not g.locs[1].keep and not g.locs[2].keep)
+end
+
+-- v3 keep-one: toggle off (keepOne=false) sets no keeper flags + format stays plain
+do
+    local recs = {
+        { sku = 93, title = "Cars", x = 1, y = 1, z = 1 },
+        { sku = 93, title = "Cars", x = 2, y = 2, z = 2 },
+    }
+    local g = report.analyze(recs, 2, false).dupes[1]
+    check("keepOne=false no keeper",  not g.locs[1].keep and not g.locs[2].keep)
+    local lines = report.format(report.analyze(recs, 2, false))
+    check("keepOne=false plain line", lines[3] == "    #1  (1.0, 1.0, 1.0)")
+end
+
+-- v3 keep-one: format annotates only the keeper placed line
+do
+    local recs = {
+        { sku = 94, title = "Brave", x = 1, y = 1, z = 1 }, -- keeper
+        { sku = 94, title = "Brave", x = 2, y = 2, z = 2 }, -- sell
+    }
+    local lines = report.format(report.analyze(recs, 2))  -- keepOne default true
+    check("keep fmt keeper line", lines[3] == "    #1  (1.0, 1.0, 1.0)  <- KEEP this one")
+    check("keep fmt sell line",   lines[4] == "    #2  (2.0, 2.0, 2.0)")
 end
 
 print(string.format("\n%s", failures == 0 and "ALL PASS" or (failures .. " FAILURE(S)")))

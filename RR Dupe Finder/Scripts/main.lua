@@ -7,13 +7,14 @@ local highlight = require("highlight")
 local P = "[RR-Dupe] "
 local function log(m) print(P .. m .. "\n") end
 
--- Live actors of every copy eligible for an in-world label: placed, and (unless the player
--- opts out) not rented. Rented copies can't be sold, so by default they're skipped.
+-- Live actors of every EXTRA copy to mark for selling: placed, not rented (unless the player opts
+-- in), and not the keeper. `keep` is set by report.analyze when Config.KeepOneCopy — it leaves one
+-- copy of each duplicated movie unmarked so you always retain one for your collection.
 local function sellableDupeActors(analysis)
     local actors = {}
     for _, g in ipairs(analysis.dupes) do
         for _, p in ipairs(g.locs) do
-            local skip = p.rented and Config.ExcludeRented
+            local skip = (p.rented and Config.ExcludeRented) or p.keep
             if p.placed and not skip and p.actor then actors[#actors + 1] = p.actor end
         end
     end
@@ -23,7 +24,7 @@ end
 local function runScan()
     highlight.clear()                                   -- drop any prior tint (refresh)
     local records, skipped = scan.run()
-    local analysis = report.analyze(records, Config.MinCopies)
+    local analysis = report.analyze(records, Config.MinCopies, Config.KeepOneCopy)
     for _, line in ipairs(report.format(analysis)) do log(line) end
     if Config.Debug and skipped > 0 then
         log(string.format("(debug) skipped %d cassette(s) with unreadable SKU", skipped))
@@ -31,8 +32,9 @@ local function runScan()
     if Config.HighlightEnabled then
         local actors = sellableDupeActors(analysis)
         local n = highlight.apply(actors, Config.TintColor) or #actors
-        log(string.format("Outlined %d sellable duplicate cassette(s). Press %s to refresh or 'rrdupe clear' to clear.",
-            n, Config.ScanKey))
+        local kept = Config.KeepOneCopy ~= false and " (one copy of each is left unmarked to keep)" or ""
+        log(string.format("Outlined %d extra duplicate copy(ies) to sell%s. Press %s to refresh or 'rrdupe clear' to clear.",
+            n, kept, Config.ScanKey))
     end
 end
 

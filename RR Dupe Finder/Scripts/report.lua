@@ -6,13 +6,17 @@ local function isOrigin(x, y, z)
 end
 
 -- records: array of { sku, title?, x, y, z, actor?, rented? }
+-- keepOne (default true): mark one copy of each duplicated SKU as the "keeper" (the first placed,
+--   non-rented copy — a displayed copy) via loc.keep = true, so the caller can leave exactly one
+--   copy of each movie unmarked/unsold and only flag the extras.
 -- Each copy buckets by precedence: rented → backstock(origin) → sellable.
 -- Returns: { totalCarts, uniqueSkus, sellableExtras,
 --            dupes = { { sku, title, copies, placedCopies,
 --                        sellableCopies, backstockCopies, rentedCopies,
---                        locs = { { x, y, z, actor, placed, rented }, ... } } } }
-function M.analyze(records, minCopies)
+--                        locs = { { x, y, z, actor, placed, rented, keep? }, ... } } } }
+function M.analyze(records, minCopies, keepOne)
     minCopies = minCopies or 2
+    if keepOne == nil then keepOne = true end
     local bySku, order = {}, {}
     for _, r in ipairs(records) do
         local g = bySku[r.sku]
@@ -46,6 +50,11 @@ function M.analyze(records, minCopies)
         if g.copies >= minCopies then
             dupes[#dupes + 1] = g
             sellableExtras = sellableExtras + math.max(0, (g.copies - g.rentedCopies) - 1)
+            if keepOne then                          -- leave one copy of each dupe unmarked: the keeper
+                for _, p in ipairs(g.locs) do        -- first placed, non-rented copy (a displayed copy)
+                    if p.placed and not p.rented then p.keep = true; break end
+                end
+            end
         end
     end
     table.sort(dupes, function(a, b)
@@ -81,6 +90,8 @@ function M.format(a)
         for i, p in ipairs(g.locs) do
             if p.rented then
                 lines[#lines + 1] = string.format("    #%d  rented (can't sell)", i)
+            elseif p.placed and p.keep then
+                lines[#lines + 1] = string.format("    #%d  (%.1f, %.1f, %.1f)  <- KEEP this one", i, p.x, p.y, p.z)
             elseif p.placed then
                 lines[#lines + 1] = string.format("    #%d  (%.1f, %.1f, %.1f)", i, p.x, p.y, p.z)
             else

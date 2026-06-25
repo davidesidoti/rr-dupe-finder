@@ -5,6 +5,8 @@ return {
     Modifiers        = {},      -- optional, e.g. { "CONTROL" }, resolved via ModifierKey[name]
     MinCopies        = 2,       -- flag SKUs owned in >= this many copies
     ExcludeRented    = true,    -- v3: don't label rented copies (you can't sell them)
+    KeepOneCopy      = true,    -- v3: mark only the EXTRA copies to sell, leaving one copy of each
+                                -- movie unmarked as your keeper. false = mark every duplicate copy.
     -- v2 in-world marker = the amber outline shell over each sellable duplicate. (v3 tried a custom
     -- "DUPLICATE" sticker and 3D text; both proved unviable on this title — see CLAUDE.md §10/gotchas.)
     HighlightEnabled = true,                                    -- false → report only, no in-world mark
