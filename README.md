@@ -102,4 +102,4 @@ See [`CLAUDE.md`](./CLAUDE.md) for the full technical context: the game's data m
 
 ## License
 
-MIT. See [`LICENSE`](./LICENSE). (Swap this out if you prefer something else.)
+Licensed under the **GNU General Public License v3.0**. See [`LICENSE`](./LICENSE).
