@@ -14,7 +14,8 @@ The in-game computer only tells you how many copies of one SKU you own at a time
 - Scans every cassette in the store with a single keypress.
 - Groups them by SKU and flags anything you own 2 or more of.
 - Shows the **movie title** of each duplicated cassette (falls back to the raw SKU if a title can't be read).
-- **Highlights only the *extra* copies to sell**, leaving one copy of each movie unmarked as your keeper — sell everything outlined and you still keep a complete, unique collection. Backstock and rented copies are listed but not highlighted.
+- **Marks only the *extra* copies to sell** — a downward **arrow** hovers over each pile of duplicates (and/or an outline on each box; configurable via `MarkerStyle`), leaving one copy of each movie unmarked as your keeper, so you can sell everything marked and still keep a complete, unique collection. Backstock and rented copies are listed but never marked.
+- **One marker per pile** (nearby copies are grouped), plus a hotkey (**F7**) to clear all markers.
 - Breaks every duplicated movie into **sellable / backstock / rented** so you know exactly what you can move.
 - Reports the world coordinates of every sellable copy so you can track them down.
 - Tells you how many extra copies you could sell in total (rented copies excluded — you can't sell those).
@@ -23,9 +24,9 @@ The in-game computer only tells you how many copies of one SKU you own at a time
 ## Roadmap
 
 - [x] Show movie titles instead of raw SKU numbers.
-- [x] Highlight duplicate cassettes in-world (outline shell) so you can spot them at a glance.
+- [x] Highlight duplicate cassettes in-world — a downward **arrow** over each pile (and/or a box outline), one marker per shelf.
 - [x] Exclude cassettes currently rented out by customers (you can't sell those).
-- [x] Config file: minimum copy threshold and custom keybind.
+- [x] Config file: copy threshold, marker style, and a clear keybind (**F7**).
 - [ ] On-screen list with direction and distance to each duplicate.
 
 ---
@@ -47,10 +48,18 @@ The in-game computer only tells you how many copies of one SKU you own at a time
 ## Usage
 
 1. Load a save with your store stocked.
-2. Press **F6** to scan. Every *extra* duplicate copy is highlighted in-world with a bright outline, leaving one copy of each movie unmarked as your keeper — so you can sell everything outlined and keep a complete, unique collection. Press **F6** again to refresh, or type `rrdupe clear` in the UE4SS console to remove the highlights.
+2. Press **F6** to scan. Each *extra* duplicate is marked in-world — by default a downward **arrow** hovers over each pile of duplicates, leaving one copy of each movie unmarked as your keeper, so you can sell everything marked and keep a complete, unique collection. Press **F6** again to refresh, or **F7** (or `rrdupe clear` in the UE4SS console) to remove all markers.
 3. Read the report.
 
 The report lists each duplicated movie by title (or its SKU if the title can't be read), its copy count, a breakdown of how many copies are sellable / in backstock / currently rented out, and the world coordinates of every sellable copy — with one copy of each marked `<- KEEP this one` (your keeper) and the rest being the extras to sell. It finishes with a total of how many extra copies you can sell (rented copies excluded). You can also trigger a scan by typing `rrdupe` in the UE4SS console.
+
+### Configuration
+
+Options live in `RR Dupe Finder\Scripts\config.lua`:
+- `MarkerStyle` — `"both"` (default), `"outline"` (box only), or `"beacon"` (arrow only).
+- `MinCopies` — how many copies counts as a duplicate (default 2).
+- `ScanKey` / `ClearKey` — scan (**F6**) and clear (**F7**) keys.
+- `BeaconScale` / `BeaconZOffset` / `BeaconClusterRadius` — arrow size, hover height, and how aggressively nearby copies merge into one marker.
 
 ### Seeing the output
 
@@ -69,7 +78,7 @@ GuiConsoleEnabled = 1
 
 ## How it works
 
-Each movie cassette is the Blueprint actor `Cartridge_Base_C`, with its SKU and title stored in a nested Blueprint struct. The mod uses UE4SS's `FindAllOf` to grab every loaded cassette, reads each SKU and movie title, groups them, and reports any SKU that appears more than once along with each actor's location. For duplicates that are physically placed on a shelf, it spawns a bright outline shell over the cassette so you can find it at a glance.
+Each movie cassette is the Blueprint actor `Cartridge_Base_C`, with its SKU and title stored in a nested Blueprint struct. The mod uses UE4SS's `FindAllOf` to grab every loaded cassette, reads each SKU and movie title, groups them, and reports any SKU that appears more than once along with each actor's location. For duplicates physically placed on a shelf, it spawns a downward **arrow** above each pile (nearby copies are grouped into one marker) and/or a bright outline over each box — your choice via `MarkerStyle` — so you can find them at a glance.
 
 Detection covers every cassette currently loaded in the level. Copies still in the store but reserved for a customer are detected (via their in-game Reserved sticker) and flagged as **rented**, so they're listed for reference but never highlighted or counted toward your sellable total — you can't sell those.
 
