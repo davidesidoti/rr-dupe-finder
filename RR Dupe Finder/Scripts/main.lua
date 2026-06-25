@@ -7,12 +7,14 @@ local highlight = require("highlight")
 local P = "[RR-Dupe] "
 local function log(m) print(P .. m .. "\n") end
 
--- Collect the live actors of every PLACED copy of every duplicated SKU.
-local function placedDupeActors(analysis)
+-- Live actors of every copy eligible for an in-world label: placed, and (unless the player
+-- opts out) not rented. Rented copies can't be sold, so by default they're skipped.
+local function sellableDupeActors(analysis)
     local actors = {}
     for _, g in ipairs(analysis.dupes) do
         for _, p in ipairs(g.locs) do
-            if p.placed and p.actor then actors[#actors + 1] = p.actor end
+            local skip = p.rented and Config.ExcludeRented
+            if p.placed and not skip and p.actor then actors[#actors + 1] = p.actor end
         end
     end
     return actors
@@ -27,7 +29,7 @@ local function runScan()
         log(string.format("(debug) skipped %d cassette(s) with unreadable SKU", skipped))
     end
     if Config.HighlightEnabled then
-        local actors = placedDupeActors(analysis)
+        local actors = sellableDupeActors(analysis)
         local n = highlight.apply(actors, Config.TintColor) or #actors
         log(string.format("Tinted %d placed duplicate cassette(s). Press %s to refresh or 'rrdupe clear' to clear.",
             n, Config.ScanKey))

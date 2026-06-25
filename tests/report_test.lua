@@ -107,7 +107,7 @@ do
     check("fmt dupe sku10 c1",lines[3] == "    #1  (1.0, 2.0, 3.0)")
     check("fmt dupe sku10 c2",lines[4] == "    #2  (4.0, 5.0, 6.0)")
     check("fmt dupe sku20",   lines[5] == "SKU 20 — 2 copies:")
-    check("fmt dupe footer",  lines[#lines] == "Total sellable extras: 2   (sum of copies-1 across duplicated SKUs)")
+    check("fmt dupe footer",  lines[#lines] == "Total sellable extras: 2   (copies minus rented, minus one to keep, per duplicated SKU)")
 end
 
 -- v2: title carried onto group + titled header
@@ -164,7 +164,7 @@ do
         { sku = 50, title = "Alien", x = 0,  y = 0,  z = 0 },  -- backstock
     }
     local lines = report.format(report.analyze(recs, 2))
-    check("v2 suffix header",    lines[2] == '"Alien" (SKU 50) — 2 copies (1 placed, 1 backstock):')
+    check("v2 suffix header",    lines[2] == '"Alien" (SKU 50) — 2 copies (1 sellable, 1 backstock):')
     check("v2 placed line",      lines[3] == "    #1  (10.0, 20.0, 30.0)")
     check("v2 backstock line",   lines[4] == "    #2  backstock (unplaced)")
 end
@@ -188,6 +188,56 @@ do
     local g = report.analyze(recs, 2).dupes[1]
     check("v2 actor1 carried",   g.locs[1].actor == "ACT-1")
     check("v2 actor2 carried",   g.locs[2].actor == "ACT-2")
+end
+
+-- v3: rented copy is bucketed rented (precedence over backstock/sellable) and excluded from extras
+do
+    local recs = {
+        { sku = 80, title = "Jaws", x = 10, y = 10, z = 10, rented = false }, -- sellable
+        { sku = 80, title = "Jaws", x = 20, y = 20, z = 20, rented = true  }, -- rented (placed but reserved)
+        { sku = 80, title = "Jaws", x = 0,  y = 0,  z = 0,  rented = false }, -- backstock
+    }
+    local g = report.analyze(recs, 2).dupes[1]
+    check("v3 copies==3",         g.copies == 3)
+    check("v3 sellableCopies==1", g.sellableCopies == 1)
+    check("v3 backstockCopies==1",g.backstockCopies == 1)
+    check("v3 rentedCopies==1",   g.rentedCopies == 1)
+    check("v3 loc rented flag",   g.locs[2].rented == true)
+end
+
+-- v3: full three-bucket suffix + per-copy lines
+do
+    local recs = {
+        { sku = 81, title = "Saw", x = 1, y = 1, z = 1, rented = false }, -- sellable
+        { sku = 81, title = "Saw", x = 0, y = 0, z = 0, rented = false }, -- backstock
+        { sku = 81, title = "Saw", x = 5, y = 6, z = 7, rented = true  }, -- rented
+    }
+    local lines = report.format(report.analyze(recs, 2))
+    check("v3 3-bucket suffix", lines[2] == '"Saw" (SKU 81) — 3 copies (1 sellable, 1 backstock, 1 rented):')
+    check("v3 sellable line",   lines[3] == "    #1  (1.0, 1.0, 1.0)")
+    check("v3 backstock line",  lines[4] == "    #2  backstock (unplaced)")
+    check("v3 rented line",     lines[5] == "    #3  rented (can't sell)")
+end
+
+-- v3: rented subtracted from sellable extras ((copies - rented) - 1)
+do
+    local recs = {
+        { sku = 82, title = "Cube", x = 1, y = 1, z = 1, rented = false },
+        { sku = 82, title = "Cube", x = 2, y = 2, z = 2, rented = false },
+        { sku = 82, title = "Cube", x = 3, y = 3, z = 3, rented = true  },
+    }
+    check("v3 extras excl rented", report.analyze(recs, 2).sellableExtras == 1)  -- (3-1)-1 = 1
+end
+
+-- v3: back-compat — no `rented` field behaves exactly like v2 (rented treated false)
+do
+    local recs = {
+        { sku = 83, title = "Tron", x = 1, y = 1, z = 1 },
+        { sku = 83, title = "Tron", x = 2, y = 2, z = 2 },
+    }
+    local g = report.analyze(recs, 2).dupes[1]
+    check("v3 nil rented == sellable", g.sellableCopies == 2 and g.rentedCopies == 0)
+    check("v3 extras back-compat",     report.analyze(recs, 2).sellableExtras == 1)
 end
 
 print(string.format("\n%s", failures == 0 and "ALL PASS" or (failures .. " FAILURE(S)")))
