@@ -13,14 +13,16 @@ The in-game computer only tells you how many copies of one SKU you own at a time
 
 - Scans every cassette in the store with a single keypress.
 - Groups them by SKU and flags anything you own 2 or more of.
-- Reports the world coordinates of every copy so you can track them down.
+- Shows the **movie title** of each duplicated cassette (falls back to the raw SKU if a title can't be read).
+- **Highlights every placed duplicate in-world** with a bright outline so you can spot it on the shelf; backstock copies (not physically placed) are listed but not highlighted.
+- Reports the world coordinates of every placed copy so you can track them down.
 - Tells you how many extra copies you could sell in total.
 - Read-only: never touches or modifies your save data.
 
 ## Roadmap
 
-- [ ] Show movie titles instead of raw SKU numbers.
-- [ ] Highlight duplicate cassettes in-world (mesh tint or marker) so you can spot them at a glance.
+- [x] Show movie titles instead of raw SKU numbers.
+- [x] Highlight duplicate cassettes in-world (outline shell) so you can spot them at a glance.
 - [ ] On-screen list with direction and distance to each duplicate.
 - [ ] Config file: minimum copy threshold, highlight color, custom keybind.
 - [ ] Optional filter to exclude cassettes currently rented out by customers.
@@ -44,10 +46,10 @@ The in-game computer only tells you how many copies of one SKU you own at a time
 ## Usage
 
 1. Load a save with your store stocked.
-2. Press **F6** to scan.
+2. Press **F6** to scan. Every placed duplicate is highlighted in-world with a bright outline; press **F6** again to refresh, or type `rrdupe clear` in the UE4SS console to remove the highlights.
 3. Read the report.
 
-The report lists each duplicated SKU, its copy count, and the world coordinates of every copy, followed by a total of how many extra copies you can sell.
+The report lists each duplicated movie by title (or its SKU if the title can't be read), its copy count, how many copies are placed on shelves versus held in backstock, and the world coordinates of every placed copy — followed by a total of how many extra copies you can sell. You can also trigger a scan by typing `rrdupe` in the UE4SS console.
 
 ### Seeing the output
 
@@ -66,7 +68,7 @@ GuiConsoleEnabled = 1
 
 ## How it works
 
-Each movie cassette is the Blueprint actor `Cartridge_Base_C`, with its SKU stored in a nested Blueprint struct. The mod uses UE4SS's `FindAllOf` to grab every loaded cassette, reads each SKU, groups them, and reports any SKU that appears more than once along with each actor's location.
+Each movie cassette is the Blueprint actor `Cartridge_Base_C`, with its SKU and title stored in a nested Blueprint struct. The mod uses UE4SS's `FindAllOf` to grab every loaded cassette, reads each SKU and movie title, groups them, and reports any SKU that appears more than once along with each actor's location. For duplicates that are physically placed on a shelf, it spawns a bright outline shell over the cassette so you can find it at a glance.
 
 Detection covers every cassette currently loaded in the level. A copy that is off the premises (for example, rented out by a customer) will not appear, which is intended since you cannot sell those anyway.
 
