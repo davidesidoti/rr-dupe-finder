@@ -110,5 +110,85 @@ do
     check("fmt dupe footer",  lines[#lines] == "Total sellable extras: 2   (sum of copies-1 across duplicated SKUs)")
 end
 
+-- v2: title carried onto group + titled header
+do
+    local recs = {
+        { sku = 10, title = "Blade Runner", x = 1, y = 2, z = 3, actor = "A1" },
+        { sku = 10, title = "Blade Runner", x = 4, y = 5, z = 6, actor = "A2" },
+    }
+    local a = report.analyze(recs, 2)
+    check("v2 title on group",   a.dupes[1].title == "Blade Runner")
+    local lines = report.format(a)
+    check("v2 titled header",    lines[2] == '"Blade Runner" (SKU 10) — 2 copies:')
+end
+
+-- v2: nil title → bare SKU header (back-compat with v1 records)
+do
+    local recs = {
+        { sku = 20, x = 1, y = 1, z = 1 }, { sku = 20, x = 2, y = 2, z = 2 },
+    }
+    local lines = report.format(report.analyze(recs, 2))
+    check("v2 untitled header",  lines[2] == "SKU 20 — 2 copies:")
+end
+
+-- v2: first non-nil title wins even if a later copy lacks one
+do
+    local recs = {
+        { sku = 30, title = nil,         x = 1, y = 1, z = 1 },
+        { sku = 30, title = "The Thing", x = 2, y = 2, z = 2 },
+    }
+    check("v2 first non-nil title", report.analyze(recs, 2).dupes[1].title == "The Thing")
+end
+
+-- v2: placed vs backstock flag + epsilon boundary
+do
+    local recs = {
+        { sku = 40, title = "X", x = 0,   y = 0,    z = 0 },  -- origin → backstock
+        { sku = 40, title = "X", x = 0.3, y = -0.2, z = 0.1 },-- within eps → backstock
+        { sku = 40, title = "X", x = 0.6, y = 0,    z = 0 },  -- outside eps → placed
+        { sku = 40, title = "X", x = 100, y = 200,  z = 5 },  -- clearly placed
+    }
+    local g = report.analyze(recs, 2).dupes[1]
+    check("v2 copies==4",        g.copies == 4)
+    check("v2 placedCopies==2",  g.placedCopies == 2)
+    check("v2 loc1 backstock",   g.locs[1].placed == false)
+    check("v2 loc2 eps backstk", g.locs[2].placed == false)
+    check("v2 loc3 eps placed",  g.locs[3].placed == true)
+    check("v2 loc4 placed",      g.locs[4].placed == true)
+end
+
+-- v2: backstock suffix + per-copy lines
+do
+    local recs = {
+        { sku = 50, title = "Alien", x = 10, y = 20, z = 30 }, -- placed
+        { sku = 50, title = "Alien", x = 0,  y = 0,  z = 0 },  -- backstock
+    }
+    local lines = report.format(report.analyze(recs, 2))
+    check("v2 suffix header",    lines[2] == '"Alien" (SKU 50) — 2 copies (1 placed, 1 backstock):')
+    check("v2 placed line",      lines[3] == "    #1  (10.0, 20.0, 30.0)")
+    check("v2 backstock line",   lines[4] == "    #2  backstock (unplaced)")
+end
+
+-- v2: all-placed dupe → no suffix
+do
+    local recs = {
+        { sku = 60, title = "Akira", x = 1, y = 1, z = 1 },
+        { sku = 60, title = "Akira", x = 2, y = 2, z = 2 },
+    }
+    local lines = report.format(report.analyze(recs, 2))
+    check("v2 no suffix",        lines[2] == '"Akira" (SKU 60) — 2 copies:')
+end
+
+-- v2: actor ref threaded through opaquely (for Session 3's tinting)
+do
+    local recs = {
+        { sku = 70, title = "Heat", x = 1, y = 1, z = 1, actor = "ACT-1" },
+        { sku = 70, title = "Heat", x = 2, y = 2, z = 2, actor = "ACT-2" },
+    }
+    local g = report.analyze(recs, 2).dupes[1]
+    check("v2 actor1 carried",   g.locs[1].actor == "ACT-1")
+    check("v2 actor2 carried",   g.locs[2].actor == "ACT-2")
+end
+
 print(string.format("\n%s", failures == 0 and "ALL PASS" or (failures .. " FAILURE(S)")))
 os.exit(failures == 0 and 0 or 1)

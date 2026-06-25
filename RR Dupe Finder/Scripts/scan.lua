@@ -13,7 +13,10 @@ function M.run()
             local s = sku.read(cart)
             if not s then skipped = skipped + 1; return end
             local loc = cart:K2_GetActorLocation()
-            out[#out + 1] = { sku = s, x = loc.X, y = loc.Y, z = loc.Z, name = cart:GetFullName() }
+            out[#out + 1] = {
+                sku = s, title = sku.readTitle(cart),
+                x = loc.X, y = loc.Y, z = loc.Z, name = cart:GetFullName(),
+            }
         end)
     end
     return out, skipped
