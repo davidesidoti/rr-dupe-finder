@@ -96,8 +96,44 @@ UnrealPak.exe <~mods>\RRDupeTest_P.pak -create=D:\RRModKit\pak_response.txt -com
 - **Note for S4:** the editor + game on this machine were **5.7** until now; cooking the real sticker must
   use this 5.4.4 — rerun the same driver with `-Sticker` (builds `RRDupeSticker_P.pak`).
 
-## Load spike (R1 / #1101) — Session 3 (next)
+## Load spike (R1 / #1101) — Session 3 — VERDICT: **FAIL** (additive new-path assets won't load)
 
-- **Cold-restart the game** (not Ctrl+R) so `RRDupeTest_P.pak` mounts, then run the `rrspike` probe.
-- Verdict: `<PASS | FAIL>`
-- If FAIL, mitigation tried: `<IoStore .utoc/.ucas repack | AES | none>` → `<result>`
+**Date:** 2026-06-25. Probe: a throwaway `rrspike` console command running a control-vs-test
+`LoadAsset` + `StaticFindObject` sweep, then a spawn. `RRDupeTest_P.pak` mounted via cold restart.
+
+**Decisive control-vs-test table (read from `UE4SS.log`):**
+
+| Path | before | LoadAsset | after | meaning |
+|---|---|---|---|---|
+| `/Engine/BasicShapes/Cone.Cone` (engine) | false | ok | **true** | LoadAsset itself works |
+| base `/Game/VideoStore/.../LA_VHS_Box_Outline_01` | true | ok | **true** | base-pak `/Game/` resolves |
+| `/Game/RRDupe/M_RRDupe_Test` (our material) | false | ok | **false** | additive new path NOT found |
+| `/Game/RRDupe/T_RRDupe_Test` (our texture) | false | ok | **false** | additive new path NOT found |
+
+`LoadAsset` returns **without error** on the RRDupe paths yet the object never enters memory, and **no**
+engine-side "failed to find package" line is logged — the classic `DoesPackageExist == false` silent
+no-op. The base outline shell spawned fine on a cassette; no quad — exactly as predicted.
+
+**Root cause (investigated, not guessed):**
+- **Not the pak format.** Base game is a single loose `RetroRewind-Windows.pak`; **no IoStore**
+  (`.utoc/.ucas`) anywhere under `Content\Paks`. The plan's "retry as IoStore" mitigation is **moot**.
+- **Not the mount-point collapse.** Our pak stores bare entries under a deep mount
+  (`../../../RetroRewind/Content/RRDupe/`), but so does the **working** `BlackMarketEveryDay_2301_P.pak`
+  (`asset/outside/WeatherSystem.uasset` … under `../../../RetroRewind/Content/`). Deep mounts resolve fine.
+- **Not the `LoadAsset` arg form.** Full `Package.Object`, the same form the stock `summon` command
+  (`ConsoleCommandsMod/summon_unloaded_assets.lua` → `LoadAsset(Parameters[1])`) uses; controls prove it.
+- **The wall is additive vs override.** Every working `~mods` pak here is an **override** of a path that
+  already exists in the cooked base registry (FlyerReSkin → L10N textures; BlackMarketEveryDay →
+  WeatherSystem/Market/Core_Gamemode). Ours is the only **additive** pak (a brand-new `/Game/RRDupe/`
+  path in no registry). The engine won't resolve a package path it never cooked, even from a correctly
+  mounted pak. = UE4SS #1101 / Spec R1.
+
+**Mitigations:** IoStore repack → N/A (no IoStore on this title). Shallow-mount repack → not attempted
+(BlackMarketEveryDay proves deep mounts load; it would not touch additive resolution). A cooked
+AssetRegistry shipped in the pak might register the new path, but that is deep, uncertain Track-B tooling.
+
+**Branch decision (plan S3 → FAIL):** Track B's custom-pak DUPLICATE **texture** sticker (Sessions 4–5)
+is **not viable** on this title. Take the **Fallback appendix** — render the label as in-world **3D text**
+(`TextRenderComponent` "DUPLICATE"), no custom pak. Track A (rented filter + report buckets, S1) already
+shipped and is unaffected; the v2 **outline shell** highlight also still works (F6 outlined 57 placed dupes
+in this test) and stays as the across-the-room marker.
