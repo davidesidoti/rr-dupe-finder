@@ -586,7 +586,7 @@ optional key) removes the tint, robust even after a hot-reload. **Needs R2 + R3.
 **Files:**
 - Modify: `RR Dupe Finder/Scripts/config.lua`
 
-- [ ] **Step 1: Append the v2 keys**
+- [x] **Step 1: Append the v2 keys**
 
 ```lua
 return {
@@ -602,7 +602,7 @@ return {
 }
 ```
 
-- [ ] **Step 2: Syntax check**
+- [x] **Step 2: Syntax check**
 
 ```powershell
 lua -e "assert(dofile('RR Dupe Finder/Scripts/config.lua'))" ; if ($?) { "config ok" }
@@ -614,7 +614,7 @@ Expected: `config ok` (config is pure data, so `dofile` works standalone).
 **Files:**
 - Modify: `RR Dupe Finder/Scripts/scan.lua`
 
-- [ ] **Step 1: Add `actor = cart` to the record**
+- [x] **Step 1: Add `actor = cart` to the record**
 
 Update the record line from Session 2 to also carry the live actor (so `highlight` can tint
 placed dupes from this same enumeration):
@@ -630,7 +630,7 @@ placed dupes from this same enumeration):
 `report.analyze` already threads `actor` through (Session 2, Task 2.3) and tests cover it — no
 `report.lua` change here.
 
-- [ ] **Step 2: Syntax check**
+- [x] **Step 2: Syntax check**
 
 ```powershell
 lua -e "assert(loadfile('RR Dupe Finder/Scripts/scan.lua'))" ; if ($?) { "syntax ok" }
@@ -642,7 +642,7 @@ Expected: `syntax ok`.
 **Files:**
 - Create: `RR Dupe Finder/Scripts/highlight.lua`
 
-- [ ] **Step 1 (verdict = overlay — the preferred path): write the overlay implementation**
+- [ ] **Step 1 (verdict = overlay — the preferred path): write the overlay implementation**  _(not used — R3 verdict was `marker`)_
 
 Substitute `<MESH>` (R2 accessor, e.g. `StaticMeshComponent`) and `<MATPATH>` (R3 material):
 
@@ -698,7 +698,7 @@ end
 return M
 ```
 
-- [ ] **Step 1-alt (verdict = dmi or swap): stateful-tint variant**
+- [ ] **Step 1-alt (verdict = dmi or swap): stateful-tint variant**  _(not used — R3 verdict was `marker`)_
 
 If R3 chose DMI or material-swap instead, use this `apply`/`clear` pair (rest of the file
 identical). It captures element-0's original material so `clear` can restore it, **and** falls
@@ -739,7 +739,7 @@ function M.clear()
 end
 ```
 
-- [ ] **Step 1-fallback (verdict = marker): spawned-marker variant**
+- [x] **Step 1-fallback (verdict = marker): spawned-marker variant**
 
 If no tint mechanism worked, spawn a bright mesh above each placed dupe. Substitute
 `<MARKERMESH>` (R3 mesh path). Spawning uses the Kismet/UEHelpers pattern — mirror
@@ -777,7 +777,7 @@ end
 return M
 ```
 
-- [ ] **Step 2: Syntax check the chosen variant**
+- [x] **Step 2: Syntax check the chosen variant**
 
 ```powershell
 lua -e "assert(loadfile('RR Dupe Finder/Scripts/highlight.lua'))" ; if ($?) { "syntax ok" }
@@ -790,7 +790,7 @@ verified in-game in Task 3.5.)
 **Files:**
 - Modify: `RR Dupe Finder/Scripts/main.lua`
 
-- [ ] **Step 1: Replace `main.lua` with the v2 version**
+- [x] **Step 1: Replace `main.lua` with the v2 version**
 
 ```lua
 -- RR Dupe Finder — entry point (v2: report + in-world tint)
@@ -869,7 +869,7 @@ end)
 log("RR Dupe Finder loaded. Press " .. Config.ScanKey .. " to scan.")
 ```
 
-- [ ] **Step 2: Syntax check**
+- [x] **Step 2: Syntax check**
 
 ```powershell
 lua -e "assert(loadfile('RR Dupe Finder/Scripts/main.lua'))" ; if ($?) { "syntax ok" }
@@ -878,13 +878,13 @@ Expected: `syntax ok`.
 
 ### Task 3.5: In-game verification of the tint
 
-- [ ] **Step 1: Hot-reload, scan, observe**
+- [x] **Step 1: Hot-reload, scan, observe**
 
 Ask the user to load a save with placed duplicates, `Ctrl+R`, press **F6**. Confirm: placed
 duplicate cassettes visibly take the tint colour; the report's `Tinted N …` line shows N equal
 to the placed-dupe count in the report.
 
-- [ ] **Step 2: Verify the tint summary line**
+- [x] **Step 2: Verify the tint summary line**
 
 ```powershell
 Select-String -Path $log -Pattern "Tinted" | Select-Object -Last 1
@@ -892,21 +892,21 @@ Select-String -Path $log -Pattern "Tinted" | Select-Object -Last 1
 Expected: `[RR-Dupe] Tinted N placed duplicate cassette(s). …` with N matching the sum of
 placed copies across dupe groups.
 
-- [ ] **Step 3: Verify clear + refresh + hot-reload robustness**
+- [x] **Step 3: Verify clear + refresh + hot-reload robustness**
 
 - Type `rrdupe clear` → confirm all tints disappear (log: `Cleared duplicate tint.`).
 - Press F6 again → tints reappear (refresh works).
 - With tints showing, press `Ctrl+R` (hot-reload wipes Lua state), then `rrdupe clear` →
   confirm tints still clear (stateless-clear / base-material restore proven, spec §8.2).
 
-- [ ] **Step 4: Verify the disable switch**
+- [x] **Step 4: Verify the disable switch**
 
 Set `Config.HighlightEnabled = false`, `Ctrl+R`, F6 → report still prints with titles, **no**
 tinting, no `Tinted …` line. Reset to `true` afterward.
 
 ### Task 3.6: Commit
 
-- [ ] **Step 1: Stage and commit (no co-author)**
+- [x] **Step 1: Stage and commit (no co-author)**
 
 ```bash
 git add "RR Dupe Finder/Scripts/config.lua" "RR Dupe Finder/Scripts/scan.lua" "RR Dupe Finder/Scripts/highlight.lua" "RR Dupe Finder/Scripts/main.lua"
