@@ -412,7 +412,7 @@ an investigation/setup session, not TDD.** It produces a short recon note, not b
 
 **Files:** none in the repo.
 
-- [ ] **Step 1: Install UE5.4 + a packer + an inspector**
+- [x] **Step 1: Install UE5.4 + a packer + an inspector**
 
 - Epic Games Launcher → **Unreal Engine 5.4.x** (match the game's engine, CLAUDE.md §2).
 - A UE pak tool: **`repak`** (https://github.com/trumank/repak — prebuilt release or `cargo install
@@ -421,7 +421,7 @@ an investigation/setup session, not TDD.** It produces a short recon note, not b
 
 Record exact versions/paths in the recon note (Task 2.4).
 
-- [ ] **Step 2: Verify each tool launches**
+- [x] **Step 2: Verify each tool launches**
 
 ```powershell
 # adjust paths to where you installed them
@@ -431,7 +431,7 @@ Expected: a version/usage banner (proves the packer runs).
 
 ### Task 2.2: Learn the real `~mods` format from an existing reskin
 
-- [ ] **Step 1: Inspect `RRMT_FlyerReSkin_P.pak` in FModel**
+- [x] **Step 1: Inspect `RRMT_FlyerReSkin_P.pak` in FModel**
 
 Open `…\RetroRewind\Content\Paks\RRMT_FlyerReSkin_P.pak` (and the base `RetroRewind-Windows.pak` for
 the AES key if prompted — RR paks are typically unencrypted; note if a key is needed). Confirm:
@@ -450,14 +450,14 @@ not strictly required, but handy in S4.
 
 **Files:** outside the repo (e.g. `D:\RRModKit\`).
 
-- [ ] **Step 1: Create a UE5.4 Blank project and one throwaway asset**
+- [x] **Step 1: Create a UE5.4 Blank project and one throwaway asset**
 
 New **Blank** C++-free project (UE 5.4). In the Content Browser create a folder matching the **runtime
 asset-path convention**: `/Game/RRDupe/`. Add one trivial `Texture2D` named `T_RRDupe_Test` (import any
 small PNG) and one **Unlit** material `M_RRDupe_Test` sampling it (Material Domain = Surface, Shading
 Model = Unlit, Emissive = the texture). Save.
 
-- [ ] **Step 2: Cook + pack into `~mods`**
+- [x] **Step 2: Cook + pack into `~mods`**
 
 Cook for Windows (Platforms → Windows → Cook Content), then pack the cooked
 `…/Saved/Cooked/Windows/<Project>/Content/RRDupe/` tree into a pak whose internal paths begin
@@ -469,7 +469,7 @@ repak pack "D:\RRModKit\packroot" "D:\SteamLibrary\steamapps\common\RetroRewind\
 ```
 Record the **exact working command** in the recon note (S3/S4 reuse it verbatim).
 
-- [ ] **Step 3: Decide and record the runtime asset-path convention**
+- [x] **Step 3: Decide and record the runtime asset-path convention**
 
 Lock the strings the Lua will load (the contract in §"Asset artifacts"):
 `/Game/RRDupe/MI_Duplicate-Sticker.MI_Duplicate-Sticker` (material) — `StaticFindObject`/`LoadAsset`
@@ -480,7 +480,7 @@ need the full `Package.Object` form. Record this.
 **Files:**
 - Create: `docs/superpowers/specs/2026-06-25-rr-dupe-finder-v3-tooling.md`
 
-- [ ] **Step 1: Record the pipeline facts**
+- [x] **Step 1: Record the pipeline facts**
 
 ```markdown
 # rr-dupe-finder — v3 tooling recon
@@ -495,7 +495,7 @@ need the full `Package.Object` form. Record this.
 - Project location: `<D:\RRModKit\...>`
 ```
 
-- [ ] **Step 2: Commit (force-add new doc; no co-author)**
+- [x] **Step 2: Commit (force-add new doc; no co-author)**
 
 ```bash
 git add -f "docs/superpowers/specs/2026-06-25-rr-dupe-finder-v3-tooling.md"
