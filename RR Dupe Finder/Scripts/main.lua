@@ -32,11 +32,13 @@ local function runScan()
     end
     if Config.HighlightEnabled then
         local outlineActors = sellableDupeActors(analysis)                                  -- per-box outlines
-        local beaconPoints  = markerMath.groupPoints(analysis.dupes, Config.ExcludeRented)  -- ONE pointer per movie
-        highlight.apply(outlineActors, beaconPoints)
+        local moviePoints   = markerMath.groupPoints(analysis.dupes, Config.ExcludeRented)  -- (count of duplicated movies)
+        local copyPts       = markerMath.copyPoints(analysis.dupes, Config.ExcludeRented)   -- every sellable copy position
+        local arrowPoints   = markerMath.clusterPoints(copyPts, Config.BeaconClusterRadius) -- one arrow per physical pile
+        highlight.apply(outlineActors, arrowPoints)
         local kept = Config.KeepOneCopy ~= false and ", one of each kept" or ""
         log(string.format("Marked %d duplicated movie(s) — %d extra copy(ies) to sell%s. Press %s to refresh or 'rrdupe clear' to clear.",
-            #beaconPoints, analysis.sellableExtras, kept, Config.ScanKey))
+            #moviePoints, analysis.sellableExtras, kept, Config.ScanKey))
     end
 end
 

@@ -39,4 +39,49 @@ function M.groupPoints(dupes, excludeRented)
     return points
 end
 
+-- copyPoints(dupes, excludeRented): a FLAT list of every markable copy's {x,y,z} (markable = placed
+-- AND not keeper AND not (rented and excludeRented)). Unlike groupPoints it does not average per
+-- movie, so feeding this to clusterPoints groups markers by physical pile — a movie split across two
+-- shelves yields a marker on each, and a stray copy never drags its movie's marker off the shelf.
+function M.copyPoints(dupes, excludeRented)
+    local pts = {}
+    for _, g in ipairs(dupes or {}) do
+        for _, p in ipairs(g.locs or {}) do
+            local skip = (p.rented and excludeRented) or p.keep
+            if p.placed and not skip then
+                pts[#pts + 1] = { x = p.x, y = p.y, z = p.z }
+            end
+        end
+    end
+    return pts
+end
+
+-- clusterPoints(points, radius): merge points whose XY distance is within `radius` into a single
+-- point (greedy, single pass), at the running XY centroid and the MAX Z of the cluster. Declutters
+-- co-located markers — e.g. many different movies whose sellable copy sits in the same sell bin or
+-- display cabinet collapse to one arrow instead of a pile. 2D (XY) so a tall shelf face merges too.
+function M.clusterPoints(points, radius)
+    local r2 = (radius or 100) * (radius or 100)
+    local clusters = {}
+    for _, p in ipairs(points or {}) do
+        local placed = false
+        for _, c in ipairs(clusters) do
+            local dx, dy = p.x - c.cx, p.y - c.cy
+            if dx * dx + dy * dy <= r2 then
+                c.sx = c.sx + p.x; c.sy = c.sy + p.y; c.n = c.n + 1
+                c.cx = c.sx / c.n; c.cy = c.sy / c.n
+                if p.z > c.z then c.z = p.z end
+                placed = true
+                break
+            end
+        end
+        if not placed then
+            clusters[#clusters + 1] = { sx = p.x, sy = p.y, n = 1, cx = p.x, cy = p.y, z = p.z }
+        end
+    end
+    local out = {}
+    for _, c in ipairs(clusters) do out[#out + 1] = { x = c.cx, y = c.cy, z = c.z } end
+    return out
+end
+
 return M

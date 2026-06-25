@@ -100,5 +100,52 @@ do
     check("multi order 2", approx(p[2].x, 2))
 end
 
+-- copyPoints: flat list of EVERY markable copy position (placed, not keeper, not rented-if-excluded).
+-- Unlike groupPoints it does NOT average per movie — so a stray copy far from the cluster stays its
+-- own point (and later clusters separately) instead of dragging the movie's arrow off the shelf.
+do
+    local dupes = { { locs = {
+        { x = 0,  y = 0, z = 5,  placed = true, keep = true },   -- keeper → excluded
+        { x = 10, y = 1, z = 40, placed = true },                -- markable
+        { x = 20, y = 2, z = 60, placed = true },                -- markable
+        { x = 0,  y = 0, z = 0,  placed = false },               -- backstock → excluded
+        { x = 30, y = 3, z = 50, placed = true, rented = true }, -- rented
+    } } }
+    local p = mm.copyPoints(dupes, true)   -- excludeRented
+    check("copyPoints count", #p == 2)
+    check("copyPoints keeps each (not centroid)", approx(p[1].x, 10) and approx(p[2].x, 20))
+    check("copyPoints z each", approx(p[1].z, 40) and approx(p[2].z, 60))
+    check("copyPoints rented included when not excluded", #mm.copyPoints(dupes, false) == 3)
+    check("copyPoints empty", #mm.copyPoints({}, true) == 0)
+end
+
+-- clusterPoints: merge points within `radius` (2D XY distance) into one, at the XY centroid and
+-- the MAX Z of the cluster. Declutters co-located arrows (e.g. many movies' copies in one sell bin).
+do
+    check("cluster empty", #mm.clusterPoints({}, 100) == 0)
+    check("cluster nil",   #mm.clusterPoints(nil, 100) == 0)
+end
+do  -- single point unchanged
+    local c = mm.clusterPoints({ { x = 0, y = 0, z = 10 } }, 100)
+    check("cluster single count", #c == 1)
+    check("cluster single xyz", approx(c[1].x, 0) and approx(c[1].y, 0) and approx(c[1].z, 10))
+end
+do  -- two close points (dist 50 < 100) → one cluster at XY centroid, max Z
+    local c = mm.clusterPoints({ { x = 0, y = 0, z = 10 }, { x = 50, y = 0, z = 30 } }, 100)
+    check("cluster merge count", #c == 1)
+    check("cluster merge x avg", approx(c[1].x, 25))
+    check("cluster merge max z", approx(c[1].z, 30))
+end
+do  -- two far points (dist 200 > 100) → two clusters, unchanged
+    local c = mm.clusterPoints({ { x = 0, y = 0, z = 10 }, { x = 200, y = 0, z = 10 } }, 100)
+    check("cluster split count", #c == 2)
+end
+do  -- greedy: 1&2 merge, 3 far → 2 clusters
+    local c = mm.clusterPoints({ { x = 0, y = 0, z = 5 }, { x = 40, y = 0, z = 5 }, { x = 300, y = 0, z = 5 } }, 100)
+    check("cluster greedy count", #c == 2)
+    check("cluster greedy first xy", approx(c[1].x, 20) and approx(c[1].y, 0))
+    check("cluster greedy second xy", approx(c[2].x, 300))
+end
+
 print(string.format("\n%s", failures == 0 and "ALL PASS" or (failures .. " FAILURE(S)")))
 os.exit(failures == 0 and 0 or 1)
