@@ -56,6 +56,44 @@ local function spawnShell(world, gs, kml, smaClass, meshObj, matObj, loc, rot, s
     return a
 end
 
+-- ── beacon animation ────────────────────────────────────────────────────────────────────────
+-- A single LoopAsync driver ticks every beacon (not one loop per beacon). It stops when its epoch
+-- token is superseded or no beacons remain. The epoch lives in _G so a driver left running across
+-- a hot reload (which reloads the module but keeps _G — gotcha 14) sees the bump and self-terminates
+-- instead of orphaning. LoopAsync runs off the game thread, so the UObject moves are wrapped in
+-- ExecuteInGameThread; the epoch check + phase advance stay outside (cheap, no UObject access).
+local INTERVAL_MS = 33   -- ~30 fps
+
+local function bumpEpoch()
+    _G.RRDupe_BeaconEpoch = (_G.RRDupe_BeaconEpoch or 0) + 1
+    return _G.RRDupe_BeaconEpoch
+end
+
+local function startAnimation()
+    local myEpoch = bumpEpoch()
+    local phase = 0
+    LoopAsync(INTERVAL_MS, function()
+        if _G.RRDupe_BeaconEpoch ~= myEpoch then return true end   -- superseded (clear/apply/reload) → stop
+        phase = phase + INTERVAL_MS / 1000
+        local p = phase
+        ExecuteInGameThread(function()
+            for _, b in ipairs(beacons) do
+                if valid(b.actor) then
+                    local z   = markerMath.bobZ(b.baseZ, p, Config.BeaconBobAmplitude, Config.BeaconBobSpeed, b.phaseOffset)
+                    local yaw = markerMath.spinYaw(b.baseYaw, p, Config.BeaconSpinSpeed)
+                    pcall(function()
+                        -- K2_SetActorLocation(NewLocation, bSweep, SweepHitResult, bTeleport)
+                        b.actor:K2_SetActorLocation({ X = b.baseX, Y = b.baseY, Z = z }, false, {}, true)
+                        -- K2_SetActorRotation(NewRotation, bTeleport)
+                        b.actor:K2_SetActorRotation({ Pitch = 0, Yaw = yaw, Roll = 0 }, true)
+                    end)
+                end
+            end
+        end)
+        return false
+    end)
+end
+
 -- apply(actors, _colour): spawn the configured marker(s) over each placed cassette actor. `_colour`
 -- is informational only (recon R3; colour is fixed by the material). Returns the number of cassettes
 -- marked. Caller (main) must be on the game thread. (Task 4 starts the animation driver here.)
@@ -100,6 +138,7 @@ function M.apply(actors, _colour)
             if marked then n = n + 1 end
         end)
     end
+    if Config.BeaconAnimate and #beacons > 0 then startAnimation() end
     return n
 end
 
@@ -108,6 +147,7 @@ end
 -- longer track (read mesh via the .StaticMesh property — GetStaticMesh() is not exposed, gotcha 12;
 -- plain-text find for hyphen-safety — gotcha 13). (Task 4 also bumps the animation epoch here.)
 function M.clear()
+    bumpEpoch()                                              -- stop any running beacon driver
     for _, a in pairs(spawned) do
         pcall(function() if valid(a) then a:K2_DestroyActor() end end)
     end
