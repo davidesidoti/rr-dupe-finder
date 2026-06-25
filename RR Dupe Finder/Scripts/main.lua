@@ -33,7 +33,7 @@ local function runScan()
         local actors = sellableDupeActors(analysis)
         local n = highlight.apply(actors, Config.TintColor) or #actors
         local kept = Config.KeepOneCopy ~= false and " (one copy of each is left unmarked to keep)" or ""
-        log(string.format("Outlined %d extra duplicate copy(ies) to sell%s. Press %s to refresh or 'rrdupe clear' to clear.",
+        log(string.format("Marked %d extra duplicate copy(ies) to sell%s. Press %s to refresh or 'rrdupe clear' to clear.",
             n, kept, Config.ScanKey))
     end
 end
