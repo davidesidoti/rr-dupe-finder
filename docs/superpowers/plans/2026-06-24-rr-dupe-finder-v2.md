@@ -277,7 +277,7 @@ marks backstock copies. Pure `report.lua` logic is fully unit-tested. **Needs R1
 **Files:**
 - Modify: `RR Dupe Finder/Scripts/sku.lua`
 
-- [ ] **Step 1: Refactor to a shared `box()` nav and add `readTitle`**
+- [x] **Step 1: Refactor to a shared `box()` nav and add `readTitle`**
 
 Replace the body of `sku.lua` (keep the SKU key verbatim; fill `TITLE_KEY` + the stringify
 from R1):
@@ -321,7 +321,7 @@ end
 return M
 ```
 
-- [ ] **Step 2: Sanity-load standalone (syntax check only)**
+- [x] **Step 2: Sanity-load standalone (syntax check only)**
 
 `sku.lua` calls UE globals, so it won't *run* standalone, but a syntax error would break the
 mod silently. Quick parse check:
@@ -335,7 +335,7 @@ Expected: `syntax ok`.
 **Files:**
 - Modify: `RR Dupe Finder/Scripts/scan.lua`
 
-- [ ] **Step 1: Add `title` to each record**
+- [x] **Step 1: Add `title` to each record**
 
 In `M.run`, change the record-building line to capture the title (everything else unchanged):
 
@@ -350,7 +350,7 @@ In `M.run`, change the record-building line to capture the title (everything els
 A readable SKU with `nil` title is **not** skipped (it lists under its SKU). `skipped` still
 counts only unreadable-SKU cassettes.
 
-- [ ] **Step 2: Syntax check**
+- [x] **Step 2: Syntax check**
 
 ```powershell
 lua -e "assert(loadfile('RR Dupe Finder/Scripts/scan.lua'))" ; if ($?) { "syntax ok" }
@@ -363,7 +363,7 @@ Expected: `syntax ok`.
 - Modify: `tests/report_test.lua`
 - Modify: `RR Dupe Finder/Scripts/report.lua`
 
-- [ ] **Step 1: Write the failing v2 cases**
+- [x] **Step 1: Write the failing v2 cases**
 
 Insert these blocks in `tests/report_test.lua` **immediately before** the final
 `print(string.format("\n%s", ...))` summary line:
@@ -450,7 +450,7 @@ do
 end
 ```
 
-- [ ] **Step 2: Run tests — verify the v2 cases fail**
+- [x] **Step 2: Run tests — verify the v2 cases fail**
 
 ```powershell
 lua tests/report_test.lua
@@ -458,7 +458,7 @@ lua tests/report_test.lua
 Expected: the `v2 …` checks `FAIL` (title/placed/actor not implemented), ending with a failure
 count and exit 1. The v1 checks still `PASS`.
 
-- [ ] **Step 3: Replace `analyze` and `format` in `report.lua`**
+- [x] **Step 3: Replace `analyze` and `format` in `report.lua`**
 
 Replace both functions (the rest of the file — `local M = {}` / `return M` — stays):
 
@@ -536,7 +536,7 @@ function M.format(a)
 end
 ```
 
-- [ ] **Step 4: Run the full suite — verify all pass**
+- [x] **Step 4: Run the full suite — verify all pass**
 
 ```powershell
 lua tests/report_test.lua
@@ -545,12 +545,12 @@ Expected: every check `PASS` (v1 + v2), ending `ALL PASS`, exit 0.
 
 ### Task 2.4: In-game verification of titles
 
-- [ ] **Step 1: Hot-reload and scan**
+- [x] **Step 1: Hot-reload and scan**
 
 Ask the user to load a save with a known duplicated movie, `Ctrl+R`, press **F6**. (`main.lua`
 is unchanged — titles flow through the existing format loop.)
 
-- [ ] **Step 2: Verify titled output**
+- [x] **Step 2: Verify titled output**
 
 ```powershell
 Select-String -Path $log -Pattern "Scan complete" | Select-Object -Last 1
@@ -562,7 +562,7 @@ as a bare `SKU n — …` line (fallback working).
 
 ### Task 2.5: Commit
 
-- [ ] **Step 1: Stage source + tests and commit (no co-author)**
+- [x] **Step 1: Stage source + tests and commit (no co-author)**
 
 ```bash
 git add "RR Dupe Finder/Scripts/sku.lua" "RR Dupe Finder/Scripts/scan.lua" "RR Dupe Finder/Scripts/report.lua" "tests/report_test.lua"
