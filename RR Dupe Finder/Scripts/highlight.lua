@@ -1,27 +1,31 @@
 -- RR Dupe Finder — in-world markers for sellable duplicate cassettes (UE-bound).
 --
--- v4: two marker types, chosen by Config.MarkerStyle ("outline" | "beacon" | "both"):
---   * outline — the v3 amber VHS outline shell ON the box (good up close on non-amber boxes).
---   * beacon  — a high-contrast marker floated ABOVE the box (Task 4 adds bob + spin), so it
---               stays visible when the cassette's own colour matches the outline and reads from
---               across the store.
--- Colour is fixed by the material asset (DMIs hard-crash — gotcha 10); additive mod-pak assets
--- won't load (gotcha 16), so every mesh/material here is a base-pak path. The beacon mesh/material
--- ship as known-loadable FALLBACK values (= the outline mesh + its neon material, floated above);
--- recon (plan Task 6) upgrades BEACON_MAT (and maybe BEACON_MESH) to a higher-contrast colour.
+-- v4 (static, one-pointer-per-movie). Two marker types, chosen by Config.MarkerStyle:
+--   * outline — the v3 amber VHS outline shell ON each duplicate box (good up close).
+--   * beacon  — ONE high-contrast pointer floated ABOVE each duplicated movie's cluster of
+--               sellable copies (centroid + height), so it reads from across the store and
+--               doesn't clash with the cassette colour. One per movie, NOT one per cassette.
+-- Everything is STATIC: a continuous LoopAsync animation was tried and hard-crashed the game
+-- (EXCEPTION_ACCESS_VIOLATION — LoopAsync runs Lua on a worker thread, which corrupts the VM
+-- when the game thread is also in Lua; see CLAUDE.md + config.lua). Do NOT reintroduce an
+-- async animation loop. Colour is fixed by the material asset (DMIs crash —
+-- gotcha 10); additive mod-pak assets won't load (gotcha 16), so every path is a base-pak path.
+-- BEACON_MESH/BEACON_MAT ship as known-loadable FALLBACKs; recon upgrades them to a downward
+-- pointer mesh + a high-contrast colour (see the spec Appendix).
 local UEHelpers  = require("UEHelpers")
 local Config     = require("config")
 local markerMath = require("marker_math")
 
 local M = {}
 
--- Outline shell (v3, unchanged).
+-- Outline shell (v3, unchanged) — spawned per duplicate box.
 local SHELL_MESH    = "/Game/VideoStore/asset/prop/vhs/LA_VHS_Box_Outline_01.LA_VHS_Box_Outline_01"
 local OUTLINE_MAT   = "/Game/VideoStore/core/shader/environment/Neon/M_Opaque_Neon_Tintable.M_Opaque_Neon_Tintable"
 local OUTLINE_SCALE = 1.1
 
--- Beacon (floated above). FALLBACK values below; recon replaces them (and appends the beacon
--- mesh name to MESH_TAGS if BEACON_MESH changes). See the spec Appendix for the chosen values.
+-- Beacon pointer (one per movie, floated above). FALLBACK = the known-loadable outline mesh +
+-- its neon material; recon replaces BEACON_MESH with a downward pointer (cone/pin) and BEACON_MAT
+-- with a high-contrast colour, appending the new mesh name to MESH_TAGS if it changes.
 local BEACON_MESH = "/Game/VideoStore/asset/prop/vhs/LA_VHS_Box_Outline_01.LA_VHS_Box_Outline_01"
 local BEACON_MAT  = "/Game/VideoStore/core/shader/environment/Neon/M_Opaque_Neon_Tintable.M_Opaque_Neon_Tintable"
 
@@ -32,7 +36,6 @@ local SMA_CLASS = "/Script/Engine.StaticMeshActor"
 local MESH_TAGS = { "LA_VHS_Box_Outline_01" }
 
 local spawned = {}   -- every tracked spawned StaticMeshActor, for clear()
-local beacons = {}   -- animated beacons: { actor, baseX, baseY, baseZ, baseYaw, phaseOffset }
 
 local function valid(o) return o ~= nil and o:IsValid() end
 local function isOrigin(loc)
@@ -48,7 +51,7 @@ local function spawnShell(world, gs, kml, smaClass, meshObj, matObj, loc, rot, s
     if not valid(a) then return nil end
     local smc = a.StaticMeshComponent
     if not valid(smc) then return nil end
-    smc:SetMobility(2)                                  -- Movable (required for runtime spawn + animation)
+    smc:SetMobility(2)                                  -- Movable (required for runtime spawn)
     smc:SetStaticMesh(meshObj)
     gs:FinishSpawningActor(a, xform, 1)
     if valid(matObj) then smc:SetMaterial(0, matObj) end   -- AFTER finish (pre-finish set is reset)
@@ -56,54 +59,17 @@ local function spawnShell(world, gs, kml, smaClass, meshObj, matObj, loc, rot, s
     return a
 end
 
--- ── beacon animation ────────────────────────────────────────────────────────────────────────
--- A single LoopAsync driver ticks every beacon (not one loop per beacon). It stops when its epoch
--- token is superseded or no beacons remain. The epoch lives in _G so a driver left running across
--- a hot reload (which reloads the module but keeps _G — gotcha 14) sees the bump and self-terminates
--- instead of orphaning. LoopAsync runs off the game thread, so the UObject moves are wrapped in
--- ExecuteInGameThread; the epoch check + phase advance stay outside (cheap, no UObject access).
-local INTERVAL_MS = 33   -- ~30 fps
-
-local function bumpEpoch()
-    _G.RRDupe_BeaconEpoch = (_G.RRDupe_BeaconEpoch or 0) + 1
-    return _G.RRDupe_BeaconEpoch
-end
-
-local function startAnimation()
-    local myEpoch = bumpEpoch()
-    local phase = 0
-    LoopAsync(INTERVAL_MS, function()
-        if _G.RRDupe_BeaconEpoch ~= myEpoch then return true end   -- superseded (clear/apply/reload) → stop
-        phase = phase + INTERVAL_MS / 1000
-        local p = phase
-        ExecuteInGameThread(function()
-            for _, b in ipairs(beacons) do
-                if valid(b.actor) then
-                    local z   = markerMath.bobZ(b.baseZ, p, Config.BeaconBobAmplitude, Config.BeaconBobSpeed, b.phaseOffset)
-                    local yaw = markerMath.spinYaw(b.baseYaw, p, Config.BeaconSpinSpeed)
-                    pcall(function()
-                        -- K2_SetActorLocation(NewLocation, bSweep, SweepHitResult, bTeleport)
-                        b.actor:K2_SetActorLocation({ X = b.baseX, Y = b.baseY, Z = z }, false, {}, true)
-                        -- K2_SetActorRotation(NewRotation, bTeleport)
-                        b.actor:K2_SetActorRotation({ Pitch = 0, Yaw = yaw, Roll = 0 }, true)
-                    end)
-                end
-            end
-        end)
-        return false
-    end)
-end
-
--- apply(actors, _colour): spawn the configured marker(s) over each placed cassette actor. `_colour`
--- is informational only (recon R3; colour is fixed by the material). Returns the number of cassettes
--- marked. Caller (main) must be on the game thread. (Task 4 starts the animation driver here.)
-function M.apply(actors, _colour)
+-- apply(outlineActors, beaconPoints): spawn the configured marker(s).
+--   outlineActors — live cassette actors to outline per-box (placed sellable extras).
+--   beaconPoints  — { {x,y,z}, ... } one hover point per duplicated movie (from marker_math.groupPoints).
+-- Returns (outlineCount, beaconCount). Caller (main) must be on the game thread.
+function M.apply(outlineActors, beaconPoints)
     local world = UEHelpers.GetWorld()
     local gs    = UEHelpers.GetGameplayStatics()
     local kml   = UEHelpers.GetKismetMathLibrary()
-    if not (world and gs and kml) then return 0 end
-    local smaClass   = StaticFindObject(SMA_CLASS)
-    if not valid(smaClass) then return 0 end
+    if not (world and gs and kml) then return 0, 0 end
+    local smaClass = StaticFindObject(SMA_CLASS)
+    if not valid(smaClass) then return 0, 0 end
     local which      = markerMath.markersFor(Config.MarkerStyle)
     local shellMesh  = StaticFindObject(SHELL_MESH)
     local outMat     = StaticFindObject(OUTLINE_MAT)
@@ -111,48 +77,47 @@ function M.apply(actors, _colour)
     local beaconMat  = StaticFindObject(BEACON_MAT)
     local zoff       = Config.BeaconZOffset or 40
     local bscale     = Config.BeaconScale or 1.3
-    local n = 0
-    for _, cart in pairs(actors or {}) do
-        pcall(function()
-            if not valid(cart) then return end
-            local loc = cart:K2_GetActorLocation()
-            if isOrigin(loc) then return end                 -- never mark backstock (defensive)
-            local rot = cart:K2_GetActorRotation()
-            local marked = false
-            if which.outline and valid(shellMesh) then
+    local outlines, beacons = 0, 0
+
+    -- per-box outlines (v3 behaviour)
+    if which.outline and valid(shellMesh) then
+        for _, cart in pairs(outlineActors or {}) do
+            pcall(function()
+                if not valid(cart) then return end
+                local loc = cart:K2_GetActorLocation()
+                if isOrigin(loc) then return end             -- never mark backstock (defensive)
+                local rot = cart:K2_GetActorRotation()
                 local a = spawnShell(world, gs, kml, smaClass, shellMesh, outMat, loc, rot, OUTLINE_SCALE)
-                if a then spawned[#spawned + 1] = a; marked = true end
-            end
-            if which.beacon and valid(beaconMesh) then
-                local bloc = { X = loc.X, Y = loc.Y, Z = loc.Z + zoff }
-                local a = spawnShell(world, gs, kml, smaClass, beaconMesh, beaconMat, bloc, rot, bscale)
-                if a then
-                    spawned[#spawned + 1] = a
-                    beacons[#beacons + 1] = {
-                        actor = a, baseX = bloc.X, baseY = bloc.Y, baseZ = bloc.Z,
-                        baseYaw = (rot and rot.Yaw) or 0, phaseOffset = #beacons * 0.7,
-                    }
-                    marked = true
-                end
-            end
-            if marked then n = n + 1 end
-        end)
+                if a then spawned[#spawned + 1] = a; outlines = outlines + 1 end
+            end)
+        end
     end
-    if Config.BeaconAnimate and #beacons > 0 then startAnimation() end
-    return n
+
+    -- ONE pointer per movie, floated above the cluster
+    if which.beacon and valid(beaconMesh) then
+        local rot0 = { Pitch = 0, Yaw = 0, Roll = 0 }
+        for _, pt in pairs(beaconPoints or {}) do
+            pcall(function()
+                if not (pt and pt.x) then return end
+                local bloc = { X = pt.x, Y = pt.y, Z = pt.z + zoff }
+                local a = spawnShell(world, gs, kml, smaClass, beaconMesh, beaconMat, bloc, rot0, bscale)
+                if a then spawned[#spawned + 1] = a; beacons = beacons + 1 end
+            end)
+        end
+    end
+
+    return outlines, beacons
 end
 
 -- clear(): destroy every shell we spawned, then sweep for orphans. A hot reload (or a prior run)
--- loses the Lua refs in `spawned`/`beacons`, so the mesh-match sweep recovers shells we can no
--- longer track (read mesh via the .StaticMesh property — GetStaticMesh() is not exposed, gotcha 12;
--- plain-text find for hyphen-safety — gotcha 13). (Task 4 also bumps the animation epoch here.)
+-- loses the Lua refs in `spawned`, so the mesh-match sweep recovers shells we can no longer track
+-- (read mesh via the .StaticMesh property — GetStaticMesh() is not exposed, gotcha 12; plain-text
+-- find for hyphen-safety — gotcha 13).
 function M.clear()
-    bumpEpoch()                                              -- stop any running beacon driver
     for _, a in pairs(spawned) do
         pcall(function() if valid(a) then a:K2_DestroyActor() end end)
     end
     spawned = {}
-    beacons = {}
     local actors = FindAllOf("StaticMeshActor") or {}
     for _, a in pairs(actors) do
         pcall(function()

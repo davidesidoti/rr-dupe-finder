@@ -23,18 +23,81 @@ do
     check("nil → both",             n.outline == true and n.beacon == true)
 end
 
--- bobZ: oscillates around baseZ; sin(0)=0, sin(pi/2)=1; offset shifts the phase
+-- groupPoints: ONE point per duplicated movie that has >=1 markable copy.
+-- markable = placed AND not keeper AND not (rented and excludeRented). Point = centroid of
+-- markable copies in X/Y, and the MAX Z among them (so the pointer floats above the tallest copy).
+
+-- empty input → no points
 do
-    check("bob phase0 == base",   approx(mm.bobZ(100, 0,        6, 3.0, 0), 100))
-    check("bob peak == base+amp", approx(mm.bobZ(100, math.pi/2, 6, 1.0, 0), 106))
-    check("bob offset shifts",    approx(mm.bobZ(100, math.pi/2, 6, 1.0, math.pi/2), 100)) -- sin(pi)=0
+    check("groupPoints empty", #mm.groupPoints({}, true) == 0)
+    check("groupPoints nil",   #mm.groupPoints(nil, true) == 0)
 end
 
--- spinYaw: base + (phase*speed) wrapped to [0,360)
+-- single markable copy → its own coordinates
 do
-    check("spin 180",         approx(mm.spinYaw(10, 2.0, 90), 190))   -- (180)%360 = 180
-    check("spin wrap 90",     approx(mm.spinYaw(10, 5.0, 90), 100))   -- (450)%360 = 90
-    check("spin full wrap 0", approx(mm.spinYaw(0, 4.0, 90), 0))      -- (360)%360 = 0
+    local dupes = { { locs = { { x = 10, y = 20, z = 30, placed = true } } } }
+    local p = mm.groupPoints(dupes, true)
+    check("single one point", #p == 1)
+    check("single x", approx(p[1].x, 10))
+    check("single y", approx(p[1].y, 20))
+    check("single z", approx(p[1].z, 30))
+end
+
+-- centroid of markable copies in X/Y, max Z; keeper excluded
+do
+    local dupes = { { locs = {
+        { x = 0,  y = 0, z = 5,  placed = true, keep = true },  -- keeper → excluded
+        { x = 10, y = 0, z = 40, placed = true },               -- markable
+        { x = 20, y = 0, z = 60, placed = true },               -- markable
+    } } }
+    local p = mm.groupPoints(dupes, true)
+    check("centroid count", #p == 1)
+    check("centroid x avg", approx(p[1].x, 15))   -- (10+20)/2
+    check("centroid y avg", approx(p[1].y, 0))
+    check("centroid max z", approx(p[1].z, 60))    -- max(40,60)
+end
+
+-- rented excluded when excludeRented true
+do
+    local dupes = { { locs = {
+        { x = 10, y = 0, z = 40, placed = true },
+        { x = 30, y = 0, z = 40, placed = true, rented = true },
+    } } }
+    local p = mm.groupPoints(dupes, true)
+    check("rented excluded count", #p == 1)
+    check("rented excluded x", approx(p[1].x, 10))   -- only the non-rented copy
+end
+
+-- rented included when excludeRented false
+do
+    local dupes = { { locs = {
+        { x = 10, y = 0, z = 40, placed = true },
+        { x = 30, y = 0, z = 40, placed = true, rented = true },
+    } } }
+    local p = mm.groupPoints(dupes, false)
+    check("rented included x", approx(p[1].x, 20))   -- (10+30)/2
+end
+
+-- group with no markable copy (all backstock / keeper) → no point
+do
+    local dupes = { { locs = {
+        { x = 0, y = 0, z = 0, placed = false },             -- backstock
+        { x = 5, y = 5, z = 5, placed = true, keep = true }, -- keeper
+    } } }
+    check("no markable → no point", #mm.groupPoints(dupes, true) == 0)
+end
+
+-- multiple groups → one point each, order preserved; groups with no markable are skipped
+do
+    local dupes = {
+        { locs = { { x = 1, y = 1, z = 1, placed = true } } },            -- markable → point
+        { locs = { { x = 9, y = 9, z = 9, placed = false } } },           -- backstock only → skip
+        { locs = { { x = 2, y = 2, z = 2, placed = true } } },            -- markable → point
+    }
+    local p = mm.groupPoints(dupes, true)
+    check("multi count", #p == 2)
+    check("multi order 1", approx(p[1].x, 1))
+    check("multi order 2", approx(p[2].x, 2))
 end
 
 print(string.format("\n%s", failures == 0 and "ALL PASS" or (failures .. " FAILURE(S)")))

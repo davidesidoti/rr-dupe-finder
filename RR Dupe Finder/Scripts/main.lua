@@ -3,6 +3,7 @@ local Config    = require("config")
 local scan      = require("scan")
 local report    = require("report")
 local highlight = require("highlight")
+local markerMath = require("marker_math")
 
 local P = "[RR-Dupe] "
 local function log(m) print(P .. m .. "\n") end
@@ -30,11 +31,12 @@ local function runScan()
         log(string.format("(debug) skipped %d cassette(s) with unreadable SKU", skipped))
     end
     if Config.HighlightEnabled then
-        local actors = sellableDupeActors(analysis)
-        local n = highlight.apply(actors, Config.TintColor) or #actors
-        local kept = Config.KeepOneCopy ~= false and " (one copy of each is left unmarked to keep)" or ""
-        log(string.format("Marked %d extra duplicate copy(ies) to sell%s. Press %s to refresh or 'rrdupe clear' to clear.",
-            n, kept, Config.ScanKey))
+        local outlineActors = sellableDupeActors(analysis)                                  -- per-box outlines
+        local beaconPoints  = markerMath.groupPoints(analysis.dupes, Config.ExcludeRented)  -- ONE pointer per movie
+        highlight.apply(outlineActors, beaconPoints)
+        local kept = Config.KeepOneCopy ~= false and ", one of each kept" or ""
+        log(string.format("Marked %d duplicated movie(s) — %d extra copy(ies) to sell%s. Press %s to refresh or 'rrdupe clear' to clear.",
+            #beaconPoints, analysis.sellableExtras, kept, Config.ScanKey))
     end
 end
 
