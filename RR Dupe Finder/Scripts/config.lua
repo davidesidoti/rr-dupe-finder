@@ -28,5 +28,5 @@ return {
 
     -- v2 outline marker colour is fixed by its material (recon R3; DMIs crash — gotcha 10).
     TintColor          = { R = 1.0, G = 0.0, B = 0.0, A = 1.0 },  -- INFORMATIONAL ONLY
-    ClearKey           = nil,                            -- optional key to clear markers; nil = none
+    ClearKey           = "F7",                           -- key to clear ALL markers (outline + arrows); nil = none
 }
