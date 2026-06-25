@@ -31,7 +31,7 @@ local function runScan()
     if Config.HighlightEnabled then
         local actors = sellableDupeActors(analysis)
         local n = highlight.apply(actors, Config.TintColor) or #actors
-        log(string.format("Tinted %d placed duplicate cassette(s). Press %s to refresh or 'rrdupe clear' to clear.",
+        log(string.format("Marked %d sellable duplicate cassette(s) with outline + DUPLICATE label. Press %s to refresh or 'rrdupe clear' to clear.",
             n, Config.ScanKey))
     end
 end
@@ -46,7 +46,7 @@ end
 local function onClear()
     ExecuteInGameThread(function()
         local ok, err = pcall(function() highlight.clear() end)
-        if ok then log("Cleared duplicate tint.") else log("Clear error: " .. tostring(err)) end
+        if ok then log("Cleared duplicate markers.") else log("Clear error: " .. tostring(err)) end
     end)
 end
 
