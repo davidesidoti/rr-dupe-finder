@@ -16,6 +16,7 @@ function M.run()
             out[#out + 1] = {
                 sku = s, title = sku.readTitle(cart),
                 x = loc.X, y = loc.Y, z = loc.Z, name = cart:GetFullName(),
+                actor = cart,   -- live actor, so highlight can tint placed dupes from this scan
             }
         end)
     end
