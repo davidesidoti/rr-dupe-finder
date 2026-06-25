@@ -923,14 +923,14 @@ Expected: author `hash_developer <sidotidavide@gmail.com>`, no `Co-Authored-By` 
 
 ### Task 4.1: Edge-case pass
 
-- [ ] **Step 1: No duplicates**
+- [x] **Step 1: No duplicates**
 
 Save with no dupes (or set `Config.MinCopies = 99`), `Ctrl+R`, F6. Expected in log:
 `No duplicates — collection is clean.` and **no** `Tinted …` line (no placed dupes → 0 tinted;
 the line may print `Tinted 0 …` — acceptable, but confirm nothing is mis-tinted). Reset
 `MinCopies = 2`.
 
-- [ ] **Step 2: All-backstock duplicate**
+- [x] **Step 2: All-backstock duplicate**
 
 If a duplicated SKU has only `(0,0,0)` copies, confirm the report shows it with
 `(0 placed, k backstock)` and that **nothing** is tinted for it (placed filter holds). Verify
@@ -939,7 +939,7 @@ via:
 Select-String -Path $log -Pattern "backstock" | Select-Object -Last 5
 ```
 
-- [ ] **Step 3: Tests still green**
+- [x] **Step 3: Tests still green**
 
 ```powershell
 lua tests/report_test.lua
@@ -952,21 +952,21 @@ Expected: `ALL PASS` (report.lua unchanged since Session 2; confirms no regressi
 - Modify: `CLAUDE.md`
 - Modify: `README.md` (only if a claim is now inaccurate)
 
-- [ ] **Step 1: Update CLAUDE.md §10 (Current status)**
+- [x] **Step 1: Update CLAUDE.md §10 (Current status)**
 
 Add a v2 line: the mod now reads the movie **title** (via `sku.readTitle`, recon key R1),
 reports `"Title" (SKU n)` with backstock flagged, and tints placed duplicates via
 `highlight.lua` (record the R3 mechanism used). Note `highlight.clear()` is stateless so tints
 survive/recover across hot-reload.
 
-- [ ] **Step 2: Update CLAUDE.md §5 + §11**
+- [x] **Step 2: Update CLAUDE.md §5 + §11**
 
 In §5 "Still unknown / TODO", strike the items the recon doc resolved (title field; mesh
 component) and cite `…-v2-recon.md`. In §11, mark **v2 done**; move any unrun R4 items
 (inventory array, rented flag) into the v3 bullets. Update §11's "Exploration TODO" to reflect
 what recon answered.
 
-- [ ] **Step 3: Update §12 reference + README**
+- [x] **Step 3: Update §12 reference + README**
 
 Add `highlight.lua` to CLAUDE.md §12 / the module list if such a list exists. Read `README.md`;
 if it describes only SKU output or "v1", update the Features/Usage to mention titles + tint and
@@ -974,12 +974,12 @@ the `rrdupe clear` command. No broad rewrite — fix only inaccurate claims.
 
 ### Task 4.3: Final verification + push
 
-- [ ] **Step 1: Full smoke test**
+- [x] **Step 1: Full smoke test**
 
 `Ctrl+R`, F6 on a save with placed + backstock duplicates. Confirm in one pass: titled report,
 backstock marked, placed dupes tinted, `rrdupe clear` clears, tests green.
 
-- [ ] **Step 2: Commit (docs by path / force-add new) — no co-author**
+- [x] **Step 2: Commit (docs by path / force-add new) — no co-author**
 
 ```bash
 git add "RR Dupe Finder/Scripts" "tests/report_test.lua"
@@ -989,7 +989,7 @@ git commit -m "Reconcile docs and README for v2 (titles + tint)" -- CLAUDE.md RE
 > local. `README.md` is tracked and stages normally. Adjust the commit to whatever is actually
 > tracked + changed; the point is one clean commit with no co-author trailer.
 
-- [ ] **Step 3: Verify no co-author, rebase, push**
+- [x] **Step 3: Verify no co-author, rebase, push**
 
 ```bash
 git log -1 --format="%an <%ae>%n%n%B"
