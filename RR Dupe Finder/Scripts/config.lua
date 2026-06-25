@@ -16,7 +16,11 @@ return {
     MarkerStyle        = "both",                        -- "outline" | "beacon" | "both"
     BeaconZOffset      = 40,                             -- units the beacon floats above the cassette
     BeaconScale        = 1.3,                            -- beacon mesh scale (reads at distance)
-    BeaconAnimate      = true,                           -- bob + slow spin; false = static beacon
+    BeaconAnimate      = false,                          -- DISABLED (crash). LoopAsync runs Lua on a worker
+                                                         -- thread; concurrent with game-thread Lua it corrupts
+                                                         -- the VM → EXCEPTION_ACCESS_VIOLATION ~40-60s after a
+                                                         -- scan (crash dump 2026-06-25 16:59). Keep false unless
+                                                         -- a GAME-THREAD-safe animation is proven. See CLAUDE.md.
     BeaconBobAmplitude = 6,                              -- vertical bob, units
     BeaconBobSpeed     = 3.0,                            -- bob rate, radians/sec
     BeaconSpinSpeed    = 90,                             -- spin rate, degrees/sec
