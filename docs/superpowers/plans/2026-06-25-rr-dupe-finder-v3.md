@@ -91,7 +91,7 @@ highlight now skips rented cassettes. **No new tooling. Ships independently of T
 - Modify: `tests/report_test.lua`
 - Modify: `RR Dupe Finder/Scripts/report.lua`
 
-- [ ] **Step 1: Update the two v2 suffix expectations to the new bucket wording**
+- [x] **Step 1: Update the two v2 suffix expectations to the new bucket wording**
 
 The suffix changes from `(p placed, b backstock)` to a non-zero-bucket list `(s sellable, b backstock,
 r rented)`. In `tests/report_test.lua`, change the two existing v2 expectations:
@@ -101,7 +101,7 @@ r rented)`. In `tests/report_test.lua`, change the two existing v2 expectations:
 ```
 (the `"Akira"` all-placed case still expects **no** suffix: `'"Akira" (SKU 60) — 2 copies:'` — leave it.)
 
-- [ ] **Step 2: Write the failing v3 cases**
+- [x] **Step 2: Write the failing v3 cases**
 
 Insert immediately before the final summary `print(...)` line in `tests/report_test.lua`:
 
@@ -157,7 +157,7 @@ do
 end
 ```
 
-- [ ] **Step 3: Run tests — verify the v3 cases (and the two edited v2 strings) fail**
+- [x] **Step 3: Run tests — verify the v3 cases (and the two edited v2 strings) fail**
 
 ```powershell
 lua tests/report_test.lua
@@ -165,7 +165,7 @@ lua tests/report_test.lua
 Expected: `v3 …` checks FAIL plus the edited `v2 suffix header` FAILS (still says "placed"); ends with
 a failure count, exit 1.
 
-- [ ] **Step 4: Replace `analyze` and `format` in `report.lua`**
+- [x] **Step 4: Replace `analyze` and `format` in `report.lua`**
 
 Replace both functions (keep `local M = {}` / `return M` and `isOrigin`):
 
@@ -264,7 +264,7 @@ function M.format(a)
 end
 ```
 
-- [ ] **Step 5: Run the full suite — verify all pass**
+- [x] **Step 5: Run the full suite — verify all pass**
 
 ```powershell
 lua tests/report_test.lua
@@ -276,7 +276,7 @@ Expected: every check PASS (v1 + v2 + v3), ending `ALL PASS`, exit 0.
 **Files:**
 - Modify: `RR Dupe Finder/Scripts/scan.lua`
 
-- [ ] **Step 1: Add an `isRented` helper + thread `rented` onto each record**
+- [x] **Step 1: Add an `isRented` helper + thread `rented` onto each record**
 
 Add near the top of `scan.lua` (after the `require`s):
 
@@ -316,7 +316,7 @@ Then in `M.run`, add `rented = isRented(cart)` to the record table (keep the v2/
             }
 ```
 
-- [ ] **Step 2: Syntax check**
+- [x] **Step 2: Syntax check**
 
 ```powershell
 lua -e "assert(loadfile('RR Dupe Finder/Scripts/scan.lua'))" ; if ($?) { "syntax ok" }
@@ -329,7 +329,7 @@ Expected: `syntax ok`.
 - Modify: `RR Dupe Finder/Scripts/config.lua`
 - Modify: `RR Dupe Finder/Scripts/main.lua`
 
-- [ ] **Step 1: Add `ExcludeRented` to `config.lua`**
+- [x] **Step 1: Add `ExcludeRented` to `config.lua`**
 
 Insert into the returned table (after `MinCopies`):
 
@@ -337,7 +337,7 @@ Insert into the returned table (after `MinCopies`):
     ExcludeRented    = true,    -- v3: don't label rented copies (you can't sell them)
 ```
 
-- [ ] **Step 2: Collect *sellable* actors in `main.lua`**
+- [x] **Step 2: Collect *sellable* actors in `main.lua`**
 
 Replace `placedDupeActors` with a rented-aware collector and update its one call site:
 
@@ -360,7 +360,7 @@ In `runScan`, change `local actors = placedDupeActors(analysis)` to
 `local actors = sellableDupeActors(analysis)`. (The summary log line text is unchanged for now;
 Session 5 rewords it for the sticker.)
 
-- [ ] **Step 3: Syntax check both**
+- [x] **Step 3: Syntax check both**
 
 ```powershell
 lua -e "assert(dofile('RR Dupe Finder/Scripts/config.lua'))" ; if ($?) { "config ok" }
@@ -370,12 +370,12 @@ Expected: `config ok` then `main ok`.
 
 ### Task 1.4: In-game verification
 
-- [ ] **Step 1: Hot-reload and scan**
+- [x] **Step 1: Hot-reload and scan**
 
 Ask the user to load a save that has at least one **rented/reserved** cassette among a duplicated
 SKU, `Ctrl+R`, press **F6**.
 
-- [ ] **Step 2: Verify the breakdown + rented exclusion**
+- [x] **Step 2: Verify the breakdown + rented exclusion**
 
 ```powershell
 Select-String -Path $log -Pattern "copies" | Select-Object -Last 10
@@ -388,7 +388,7 @@ Reserved-sticker mesh name against a fresh component probe before proceeding.)
 
 ### Task 1.5: Commit
 
-- [ ] **Step 1: Stage source + tests and commit (no co-author)**
+- [x] **Step 1: Stage source + tests and commit (no co-author)**
 
 ```bash
 git add "RR Dupe Finder/Scripts/scan.lua" "RR Dupe Finder/Scripts/report.lua" "RR Dupe Finder/Scripts/config.lua" "RR Dupe Finder/Scripts/main.lua" "tests/report_test.lua"
