@@ -37,11 +37,6 @@ local BEACON_MATS = {
 
 local SMA_CLASS = "/Script/Engine.StaticMeshActor"
 
--- Mesh-name substrings the orphan sweep matches in clear() (plain-text find — gotcha 13). Covers
--- every mesh we might spawn (outline box + each beacon candidate). Specific enough not to match
--- unrelated game meshes ("BasicShapes/Cone", not bare "Cone").
-local MESH_TAGS = { "LA_VHS_Box_Outline_01", "SM_3DWidget_Arrow", "BasicShapes/Cone" }
-
 local spawned = {}   -- every tracked spawned StaticMeshActor, for clear()
 
 local function valid(o) return o ~= nil and o:IsValid() end
@@ -151,29 +146,25 @@ function M.apply(outlineActors, beaconPoints)
     return outlines, beacons
 end
 
--- clear(): destroy every shell we spawned, then sweep for orphans. A hot reload (or a prior run)
--- loses the Lua refs in `spawned`, so the mesh-match sweep recovers shells we can no longer track
--- (read mesh via the .StaticMesh property — GetStaticMesh() is not exposed, gotcha 12; plain-text
--- find for hyphen-safety — gotcha 13).
+-- clear(): destroy ONLY the markers we spawned (tracked in `spawned`).
+--
+-- DO NOT sweep FindAllOf("StaticMeshActor") and match by mesh name. LA_VHS_Box_Outline_01 is the
+-- game's OWN per-cassette box mesh: a v4 diagnostic (rrdiag) found 544 game StaticMeshActors using
+-- it, exactly one per the 544 Cartridge_Base_C/videotape_C in the store, all pre-existing level
+-- actors. The old mesh-name sweep K2_DestroyActor'd all of them on F7 (and on the clear at the start
+-- of every F6) — that is the "I place duplicates, hit F7, and they vanish until I pick them back up
+-- and replace them" bug, and almost certainly the stuck-info-box bug too (destroying a box orphans
+-- its Widget3D_PickUp). `spawned` is reliable for the player flow (apply appends; clear resets; a
+-- shipped game never hot reloads), so tracking alone is sufficient AND can never touch a game actor.
+--
+-- Trade-off: a DEV hot reload (Ctrl+R) wipes `spawned`, stranding any live markers until a game
+-- restart. That is acceptable (players don't hot reload). If orphan recovery is ever wanted back, do
+-- it via a per-actor tag WE set on spawn — never by a mesh name the game itself uses.
 function M.clear()
     for _, a in pairs(spawned) do
         pcall(function() if valid(a) then a:K2_DestroyActor() end end)
     end
     spawned = {}
-    local actors = FindAllOf("StaticMeshActor") or {}
-    for _, a in pairs(actors) do
-        pcall(function()
-            if not valid(a) or a:GetFullName():find("Default__") then return end
-            local smc = a.StaticMeshComponent
-            if not valid(smc) then return end
-            local m  = smc.StaticMesh
-            local nm = m and m:GetFullName()
-            if not nm then return end
-            for _, tag in ipairs(MESH_TAGS) do
-                if nm:find(tag, 1, true) then a:K2_DestroyActor(); return end
-            end
-        end)
-    end
 end
 
 return M
